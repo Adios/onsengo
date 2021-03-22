@@ -1,4 +1,4 @@
-// Package expression wraps a `goja` vm to run a given JavaScript expression in a string.
+// Package expression wraps a `goja` vm to run a given JavaScript expression.
 package expression
 
 import (
@@ -9,22 +9,26 @@ import (
 )
 
 type Expression interface {
-	// Run the given JavaScript code which produces a *value*, i.e. expressions.
+	// Run the contained JavaScript code which produces a *value*, i.e. expressions.
 	// Returns a string of the value's JSON representation and any JS error encountered,
 	// such as exceptions, syntax errors and expressions that were evaluated to `undefined`.
-	Stringify(string) (string, error)
+	Stringify() (string, error)
 }
 
 type expression struct {
+	js string
 	vm *goja.Runtime
 }
 
-func New() Expression {
-	return &expression{}
+// Takes a piece of JavaScript code to be evaluated.
+func New(js string) Expression {
+	return &expression{
+		js: js,
+	}
 }
 
-func (e *expression) Stringify(js string) (string, error) {
-	torun := fmt.Sprintf("JSON.stringify(%s)", js)
+func (e *expression) Stringify() (string, error) {
+	torun := fmt.Sprintf("JSON.stringify(%s)", e.js)
 
 	res, err := e.getVm().RunString(torun)
 	if err != nil {

@@ -10,16 +10,16 @@ import (
 )
 
 func TestUndefined(t *testing.T) {
-	e := New()
-	res, err := e.Stringify("")
+	e := New("")
+	res, err := e.Stringify()
 
 	assert.Equal(t, res, "")
 	assert.Equal(t, err, errors.New("We got nothing after running. Possibly the js returned an undefined."))
 }
 
 func TestSyntaxError(t *testing.T) {
-	e := New()
-	res, err := e.Stringify(";")
+	e := New(";")
+	res, err := e.Stringify()
 
 	assert.Equal(t, res, "")
 
@@ -28,8 +28,8 @@ func TestSyntaxError(t *testing.T) {
 }
 
 func Example() {
-	e := New()
-	res, err := e.Stringify("(function(x) {return {hello: x}})('world')")
+	e := New("(function(x) {return {hello: x}})('world')")
+	res, err := e.Stringify()
 
 	if err != nil {
 		panic(err)
