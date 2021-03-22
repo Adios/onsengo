@@ -7,35 +7,30 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestEmptyHtml(t *testing.T) {
-	h := New("")
-	res := h.GetNuxtExpression()
+func TestEmptyContent(t *testing.T) {
+	expr := FindNuxtExpression("")
 
-	assert.Nil(t, res)
+	assert.Nil(t, expr)
 }
 
-func TestInvalidHtml(t *testing.T) {
-	h := New("...<script>window.__NUXT__=one</script><script>window.__NUXT__=two</script>...")
-	res := h.GetNuxtExpression()
+func TextNoNuxtPattern(t *testing.T) {
+	expr := FindNuxtExpression("...<script>window.__NUXT__=one</script><script>window.__NUXT__=two</script>...")
 
-	assert.Nil(t, res)
+	assert.Nil(t, expr)
 }
 
-func TestMatchSecond(t *testing.T) {
-	h := New("...<script>window.__NUXT__=one</script><script>window.__NUXT__=two;</script>...")
-	res := h.GetNuxtExpression()
+func TextNuxtPattern(t *testing.T) {
+	expr := FindNuxtExpression("...<script>window.__NUXT__=one</script><script>window.__NUXT__=two;</script>...")
 
-	assert.Equal(t, *res, "two;")
+	assert.Equal(t, *expr, "two;")
 }
 
 func Example() {
-	h := New("...<script>window.__NUXT__=one;</script><script>window.__NUXT__=two;</script>...")
-	res := h.GetNuxtExpression()
-
-	if res == nil {
-		panic(res)
+	expr := FindNuxtExpression("...<script>window.__NUXT__=one;</script><script>window.__NUXT__=two;</script>...")
+	if expr == nil {
+		panic("not found")
 	}
 
-	fmt.Println(*res)
+	fmt.Println(*expr)
 	// Output: one;
 }
