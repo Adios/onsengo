@@ -22,7 +22,7 @@ func TestInvalidNuxtObject(t *testing.T) {
 
 	all := nuxt.State.Programs.Programs.All
 
-	assert.Equal(t, len(all), 0)
+	assert.Equal(t, 0, len(all))
 }
 
 func TestNonlogined(t *testing.T) {
@@ -35,34 +35,42 @@ func TestNonlogined(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Nil(t, nuxt.Error)
-	assert.Equal(t, nuxt.RoutePath, "/")
+	assert.Equal(t, "/", nuxt.RoutePath)
 	assert.Nil(t, nuxt.State.Signin)
 
 	all := nuxt.State.Programs.Programs.All
 
-	assert.Equal(t, len(all), 128)
+	assert.Equal(t, 128, len(all))
 
 	kami := all[34]
 
-	assert.Equal(t, kami.Id, ProgramId(139))
-	assert.Equal(t, kami.DirectoryName, "kamisama-day")
-	assert.Equal(t, kami.Title, "神様になったラジオ")
-	assert.Equal(t, kami.New, false)
-	assert.Equal(t, kami.Updated, "3/19")
-	assert.Equal(t, kami.Performers, []Performer{
-		{55, "佐倉綾音"},
-		{140, "花江夏樹"},
-	})
+	assert.Equal(t, ProgramId(139), kami.Id)
+	assert.Equal(t, "kamisama-day", kami.DirectoryName)
+	assert.Equal(t, "神様になったラジオ", kami.Title)
+	assert.Equal(t, false, kami.New)
+	assert.Equal(t, "3/19", kami.Updated)
+	assert.Equal(
+		t,
+		[]Performer{
+			{55, "佐倉綾音"},
+			{140, "花江夏樹"},
+		},
+		kami.Performers,
+	)
 
-	assert.Equal(t, len(kami.Contents), 8)
-	assert.Equal(t, kami.Contents[1], Content{
-		ContentId(3677), "第12回 おまけ",
-		true, false, true, "sound", true,
-		ProgramId(139), "3/19", false,
-		"https://d3bzklg4lms4gh.cloudfront.net/program_info/image/default/production" +
-			"/66/99/05f3c9402ca36cc3156dd50b7ab9aad298dd/image?v=1602579721",
-		nil, []string{},
-	})
+	assert.Equal(t, 8, len(kami.Contents))
+	assert.Equal(
+		t,
+		Content{
+			ContentId(3677), "第12回 おまけ",
+			true, false, true, "sound", true,
+			ProgramId(139), "3/19", false,
+			"https://d3bzklg4lms4gh.cloudfront.net/program_info/image/default/production" +
+				"/66/99/05f3c9402ca36cc3156dd50b7ab9aad298dd/image?v=1602579721",
+			nil, []string{},
+		},
+		kami.Contents[1],
+	)
 }
 
 func TestPaidMember(t *testing.T) {
@@ -75,27 +83,31 @@ func TestPaidMember(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Nil(t, nuxt.Error)
-	assert.Equal(t, nuxt.RoutePath, "/")
+	assert.Equal(t, "/", nuxt.RoutePath)
 	assert.NotNil(t, nuxt.State.Signin)
 
 	all := nuxt.State.Programs.Programs.All
 
-	assert.Equal(t, len(all), 128)
+	assert.Equal(t, 128, len(all))
 
 	kami := all[30]
 
-	assert.Equal(t, kami.Id, ProgramId(139))
-	assert.Equal(t, kami.DirectoryName, "kamisama-day")
-	assert.Equal(t, kami.Title, "神様になったラジオ")
-	assert.Equal(t, kami.New, false)
-	assert.Equal(t, kami.Updated, "3/19")
-	assert.Equal(t, kami.Performers, []Performer{
-		{55, "佐倉綾音"},
-		{140, "花江夏樹"},
-	})
+	assert.Equal(t, ProgramId(139), kami.Id)
+	assert.Equal(t, "kamisama-day", kami.DirectoryName)
+	assert.Equal(t, "神様になったラジオ", kami.Title)
+	assert.Equal(t, false, kami.New)
+	assert.Equal(t, "3/19", kami.Updated)
+	assert.Equal(
+		t,
+		[]Performer{
+			{55, "佐倉綾音"},
+			{140, "花江夏樹"},
+		},
+		kami.Performers,
+	)
 
-	assert.Equal(t, len(kami.Contents), 8)
-	assert.Equal(t, *kami.Contents[1].StreamingUrl, "HAS_BEEN_SCREENED")
+	assert.Equal(t, 8, len(kami.Contents))
+	assert.Equal(t, "HAS_BEEN_SCREENED", *kami.Contents[1].StreamingUrl)
 }
 
 func Example() {

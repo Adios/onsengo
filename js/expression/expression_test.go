@@ -13,18 +13,18 @@ func TestUndefined(t *testing.T) {
 	e := New("")
 	res, err := e.Stringify()
 
-	assert.Equal(t, res, "")
-	assert.Equal(t, err, errors.New("We got nothing after running. Possibly the js returned an undefined."))
+	assert.Equal(t, "", res)
+	assert.Equal(t, errors.New("We got nothing after running. Possibly the js returned an undefined."), err)
 }
 
 func TestSyntaxError(t *testing.T) {
 	e := New(";")
 	res, err := e.Stringify()
 
-	assert.Equal(t, res, "")
+	assert.Equal(t, "", res)
 
 	_, ok := err.(*goja.Exception)
-	assert.Equal(t, ok, true)
+	assert.Equal(t, true, ok)
 }
 
 func Example() {
