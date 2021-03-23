@@ -22,7 +22,7 @@ func TextNoNuxtPattern(t *testing.T) {
 func TextNuxtPattern(t *testing.T) {
 	expr := FindNuxtExpression("...<script>window.__NUXT__=one</script><script>window.__NUXT__=two;</script>...")
 
-	assert.Equal(t, *expr, "two;")
+	assert.Equal(t, *expr, "two")
 }
 
 func Example() {
@@ -32,5 +32,5 @@ func Example() {
 	}
 
 	fmt.Println(*expr)
-	// Output: one;
+	// Output: one
 }
