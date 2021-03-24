@@ -25,8 +25,8 @@ type State struct {
 // Personal data. Only the fields we may use were defined here.
 type Signin struct {
 	Email                string        `json:"email"`
-	Uid                  string        `json:"uid"`
-	FavoritePerformerIds []PerformerId `json:"favorite_performer_ids`
+	Id                   string        `json:"id"`
+	FavoritePerformerIds []PerformerId `json:"favorite_performer_ids"`
 	FavoriteProgramIds   []ProgramId   `json:"favorite_program_ids"`
 	PlaylistedContentIds []ContentId   `json:"playlisted_content_ids"`
 }
