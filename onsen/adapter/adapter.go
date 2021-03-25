@@ -14,11 +14,11 @@ type User interface {
 	Email() string
 	// A string of digits.
 	UserId() string
-	// A slice of uint returned from Person.PersonId()
+	// Returns a non-nil slice of uint.
 	FollowingPeople() []uint
-	// A slice of uint returned RadioShow.RadioShowId()
+	// Returns a non-nil slice of uint.
 	FollowingRadioShows() []uint
-	// A slice of uint returned Episode.EpisodeId()
+	// Returns a non-nil slice of uint.
 	PlayingEpisodes() []uint
 }
 
@@ -34,9 +34,10 @@ type RadioShow interface {
 	// An empty time.Time{} means there is an invalid date pattern.
 	GuessedUpdatedAt() time.Time
 
+	// Returns a non-nil slice of Person.
 	Hosts() []Person
 
-	// Returns a slice of Episode instances which may either be an AudioEpisode or a VideoEpisode.
+	// Returns a non-nil slice of Episode. Each episode instance has either Audio or Video interface.
 	Episodes() []Episode
 }
 
@@ -64,7 +65,7 @@ type Episode interface {
 	// An empty time.Time{} means there is an invalid date pattern.
 	GuessedPublishedAt() time.Time
 
-	// Always returns a slice, an empty slice means there are no guests.
+	// Returns a non-nil slice, an empty slice means there are no guests.
 	//  [ "name1", "name2" ]
 	Guests() []string
 
