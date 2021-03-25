@@ -77,7 +77,7 @@ func TestAudioRadioShow(t *testing.T) {
 	assert.Equal(t, false, r.HasUpdates())
 
 	// Year depends on time.Now()
-	at := r.UpdatedAt()
+	at := r.GuessedUpdatedAt()
 	assert.Equal(t, time.Month(3), at.Month())
 	assert.Equal(t, 19, at.Day())
 
@@ -116,7 +116,7 @@ func TestAudioEpisodeWithGuestNoManifest(t *testing.T) {
 	assert.Equal(t, "第9回", e.Title())
 
 	// Year depends on time.Now()
-	at := e.PublishedAt()
+	at := e.GuessedPublishedAt()
 	assert.Equal(t, time.Month(2), at.Month())
 	assert.Equal(t, 5, at.Day())
 

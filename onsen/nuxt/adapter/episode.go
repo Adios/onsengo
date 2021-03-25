@@ -41,7 +41,7 @@ func (e episode) Manifest() string {
 	return *str
 }
 
-func (e episode) PublishedAt() time.Time {
+func (e episode) GuessedPublishedAt() time.Time {
 	return GuessJstTimeWithNow(e.raw.DeliveryDate)
 }
 

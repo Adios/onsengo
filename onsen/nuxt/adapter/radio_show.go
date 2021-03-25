@@ -27,7 +27,7 @@ func (r radioShow) HasUpdates() bool {
 	return r.raw.New
 }
 
-func (r radioShow) UpdatedAt() time.Time {
+func (r radioShow) GuessedUpdatedAt() time.Time {
 	return GuessJstTimeWithNow(r.raw.Updated)
 }
 

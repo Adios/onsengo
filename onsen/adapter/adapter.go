@@ -26,7 +26,8 @@ type RadioShow interface {
 	// Returns a best-effor time that is guessed based on time.Now().
 	// Since there is no YYYY recorded in onsen's raw data. (MM/DD only)
 	// An empty time.Time{} means there is an invalid date pattern.
-	UpdatedAt() time.Time
+	GuessedUpdatedAt() time.Time
+
 	Hosts() []Person
 
 	// Returns a slice of Episode instances which may either be an AudioEpisode or a VideoEpisode.
@@ -55,7 +56,7 @@ type Episode interface {
 	// Returns a best-effor time that is guessed based on time.Now().
 	// Since there is no YYYY recorded in onsen's raw data. (MM/DD only)
 	// An empty time.Time{} means there is an invalid date pattern.
-	PublishedAt() time.Time
+	GuessedPublishedAt() time.Time
 
 	// Always returns a slice, an empty slice means there are no guests.
 	//  [ "name1", "name2" ]
