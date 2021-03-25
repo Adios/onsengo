@@ -26,7 +26,7 @@ func TestInvalidNuxtObject(t *testing.T) {
 }
 
 func TestNonlogined(t *testing.T) {
-	content, err := os.ReadFile("../tests/fixture_nologin_screened.json")
+	content, err := os.ReadFile("testdata/fixture_nologin_screened.json")
 	if err != nil {
 		panic(err)
 	}
@@ -74,7 +74,7 @@ func TestNonlogined(t *testing.T) {
 }
 
 func TestPaidMember(t *testing.T) {
-	content, err := os.ReadFile("../tests/fixture_paid_screened.json")
+	content, err := os.ReadFile("testdata/fixture_paid_screened.json")
 	if err != nil {
 		panic(err)
 	}
@@ -111,7 +111,7 @@ func TestPaidMember(t *testing.T) {
 }
 
 func Example() {
-	content, err := os.ReadFile("../tests/fixture_nologin_screened.json")
+	content, err := os.ReadFile("testdata/fixture_nologin_screened.json")
 	if err != nil {
 		panic(err)
 	}

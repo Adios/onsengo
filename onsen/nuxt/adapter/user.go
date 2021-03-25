@@ -1,21 +1,9 @@
 package adapter
 
 import (
+	"github.com/adios/onsengo/onsen/adapter"
 	"github.com/adios/onsengo/onsen/nuxt"
 )
-
-// User wraps an instance of nuxt.Signin to transform output on the fly.
-type User interface {
-	Email() string
-	// Raw value is a string of digits, possibly int type. But we don't know, leave it as is.
-	UserId() string
-	// A slice of Person.PersonId()
-	FollowingPeople() []uint
-	// A slice of RadioShow.RadioShowId()
-	FollowingRadioShows() []uint
-	// A slice of Episode.EpisodeId()
-	PlayingEpisodes() []uint
-}
 
 type user struct {
 	raw *nuxt.Signin
@@ -59,7 +47,8 @@ func (u user) PlayingEpisodes() []uint {
 	return out
 }
 
-func NewUser(s *nuxt.Signin) User {
+// User wraps an instance of nuxt.Signin to transform output on the fly.
+func NewUser(s *nuxt.Signin) adapter.User {
 	if s == nil {
 		panic("Cannot be nil")
 	}

@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/adios/onsengo/onsen/adapter"
 	"github.com/adios/onsengo/onsen/nuxt"
 	"github.com/stretchr/testify/assert"
 )
@@ -12,11 +13,11 @@ import (
 var fts map[string]map[string]interface{}
 
 func setupFixtures() {
-	a, err := os.ReadFile("../tests/fixture_nologin_screened.json")
+	a, err := os.ReadFile("../testdata/fixture_nologin_screened.json")
 	if err != nil {
 		panic(err)
 	}
-	b, err := os.ReadFile("../tests/fixture_paid_screened.json")
+	b, err := os.ReadFile("../testdata/fixture_paid_screened.json")
 	if err != nil {
 		panic(err)
 	}
@@ -90,12 +91,12 @@ func TestAudioRadioShow(t *testing.T) {
 	assert.Equal(t, "第12回", e[0].Title())
 	assert.Equal(t, "第12回 おまけ", e[1].Title())
 
-	_, ok := e[0].(Audio)
+	_, ok := e[0].(adapter.Audio)
 	assert.Equal(t, true, ok)
 }
 func TestVideoRadioShow(t *testing.T) {
 	p := fts["anon"]["fujita"].(nuxt.Program)
-	_, ok := NewRadioShow(&p).Episodes()[0].(Video)
+	_, ok := NewRadioShow(&p).Episodes()[0].(adapter.Video)
 
 	assert.Equal(t, true, ok)
 }
@@ -107,7 +108,7 @@ func TestAudioEpisodeWithGuestNoManifest(t *testing.T) {
 	cs := fts["anon"]["kamisama.all"].([]nuxt.Content)
 	e := NewEpisode(&cs[6])
 
-	_, ok := e.(Audio)
+	_, ok := e.(adapter.Audio)
 	assert.Equal(t, true, ok)
 
 	assert.Equal(t, uint(3114), e.EpisodeId())
@@ -149,7 +150,7 @@ func TestVideoEpisode(t *testing.T) {
 	cs := fts["anon"]["fujita.all"].([]nuxt.Content)
 	e := NewEpisode(&cs[0])
 
-	_, ok := e.(Video)
+	_, ok := e.(adapter.Video)
 	assert.Equal(t, true, ok)
 	assert.Equal(t, "HAS_BEEN_SCREENED", e.Manifest())
 }

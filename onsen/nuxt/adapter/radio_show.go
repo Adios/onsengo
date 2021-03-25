@@ -3,21 +3,9 @@ package adapter
 import (
 	"time"
 
+	"github.com/adios/onsengo/onsen/adapter"
 	"github.com/adios/onsengo/onsen/nuxt"
 )
-
-// RadioShow wraps an instance of nuxt.Program to transform output on the fly.
-type RadioShow interface {
-	RadioShowId() uint
-	Name() string
-	Title() string
-	HasUpdates() bool
-	UpdatedAt() time.Time
-	Hosts() []Person
-
-	// Returns a slice of Episode instances which may either be an AudioEpisode or a VideoEpisode.
-	Episodes() []Episode
-}
 
 type radioShow struct {
 	raw *nuxt.Program
@@ -43,10 +31,10 @@ func (r radioShow) UpdatedAt() time.Time {
 	return GuessJstTimeWithNow(r.raw.Updated)
 }
 
-func (r radioShow) Hosts() []Person {
+func (r radioShow) Hosts() []adapter.Person {
 	ps := r.raw.Performers
 
-	out := make([]Person, 0, len(ps))
+	out := make([]adapter.Person, 0, len(ps))
 	for i := range ps {
 		out = append(out, NewPerson(&ps[i]))
 	}
@@ -54,10 +42,10 @@ func (r radioShow) Hosts() []Person {
 	return out
 }
 
-func (r radioShow) Episodes() []Episode {
+func (r radioShow) Episodes() []adapter.Episode {
 	cs := r.raw.Contents
 
-	out := make([]Episode, 0, len(cs))
+	out := make([]adapter.Episode, 0, len(cs))
 	for i := range cs {
 		out = append(out, NewEpisode(&cs[i]))
 	}
@@ -65,7 +53,8 @@ func (r radioShow) Episodes() []Episode {
 	return out
 }
 
-func NewRadioShow(p *nuxt.Program) RadioShow {
+// RadioShow wraps an instance of nuxt.Program to transform output on the fly.
+func NewRadioShow(p *nuxt.Program) adapter.RadioShow {
 	if p == nil {
 		panic("Cannot be nil")
 	}

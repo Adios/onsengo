@@ -2,31 +2,32 @@
 package adapter
 
 import (
+	"github.com/adios/onsengo/onsen/adapter"
 	"github.com/adios/onsengo/onsen/nuxt"
 )
 
 // Root wraps an instance of nuxt.Nuxt to transform output on the fly.
 type Root interface {
-	RadioShows() []RadioShow
+	RadioShows() []adapter.RadioShow
 	// Returns nil if there is no login associated.
-	User() *User
+	User() *adapter.User
 }
 
 type root struct {
 	raw *nuxt.Nuxt
 }
 
-func (r root) RadioShows() []RadioShow {
+func (r root) RadioShows() []adapter.RadioShow {
 	all := r.raw.State.Programs.Programs.All
 
-	out := make([]RadioShow, 0, len(all))
+	out := make([]adapter.RadioShow, 0, len(all))
 	for i := range all {
 		out = append(out, NewRadioShow(&all[i]))
 	}
 	return out
 }
 
-func (r root) User() *User {
+func (r root) User() *adapter.User {
 	if r.raw.State.Signin == nil {
 		return nil
 	}
