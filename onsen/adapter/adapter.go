@@ -3,6 +3,12 @@ package adapter
 
 import "time"
 
+type Adapter interface {
+	RadioShows() []RadioShow
+	// Returns nil if there is no login associated.
+	User() *User
+}
+
 // A signed-in user.
 type User interface {
 	Email() string

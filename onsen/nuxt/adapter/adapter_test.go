@@ -187,18 +187,18 @@ func TestNewUser(t *testing.T) {
 	)
 }
 
-func TestNilNewRoot(t *testing.T) {
-	assert.Panics(t, func() { NewRoot(nil) }, "Cannot be nil")
+func TestNilNewAdapter(t *testing.T) {
+	assert.Panics(t, func() { NewAdapter(nil) }, "Cannot be nil")
 }
-func TestNewRootPaid(t *testing.T) {
-	r := NewRoot(fts["paid"]["nuxt"].(*nuxt.Nuxt))
+func TestNewAdapterPaid(t *testing.T) {
+	r := NewAdapter(fts["paid"]["nuxt"].(*nuxt.Nuxt))
 
 	assert.Equal(t, 128, len(r.RadioShows()))
 	assert.Equal(t, "tsudaken", r.RadioShows()[17].Name())
 	assert.NotNil(t, r.User())
 }
-func TestNewRootAnonymous(t *testing.T) {
-	r := NewRoot(fts["anon"]["nuxt"].(*nuxt.Nuxt))
+func TestNewAdapterAnonymous(t *testing.T) {
+	r := NewAdapter(fts["anon"]["nuxt"].(*nuxt.Nuxt))
 
 	assert.Equal(t, 128, len(r.RadioShows()))
 	assert.Nil(t, r.User())
