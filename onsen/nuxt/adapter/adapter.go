@@ -21,13 +21,13 @@ func (a nuxtAdapter) RadioShows() []adapter.RadioShow {
 	return out
 }
 
-func (a nuxtAdapter) User() *adapter.User {
+func (a nuxtAdapter) User() adapter.User {
 	if a.raw.State.Signin == nil {
 		return nil
 	}
 
 	u := NewUser(a.raw.State.Signin)
-	return &u
+	return u
 }
 
 func NewAdapter(n *nuxt.Nuxt) adapter.Adapter {

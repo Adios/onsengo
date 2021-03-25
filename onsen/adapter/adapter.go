@@ -6,7 +6,7 @@ import "time"
 type Adapter interface {
 	RadioShows() []RadioShow
 	// Returns nil if there is no login associated.
-	User() *User
+	User() User
 }
 
 // A signed-in user.
