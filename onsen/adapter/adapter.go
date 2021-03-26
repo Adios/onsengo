@@ -31,7 +31,7 @@ type RadioShow interface {
 
 	// Returns a best-effor time that is guessed based on time.Now().
 	// Since there is no YYYY recorded in onsen's raw data. (MM/DD only)
-	// An empty time.Time{} means there is an invalid date pattern.
+	// An empty time.Time{} means there is an invalid date pattern or just not having a time.
 	GuessedUpdatedAt() time.Time
 
 	// Returns a non-nil slice of Person.

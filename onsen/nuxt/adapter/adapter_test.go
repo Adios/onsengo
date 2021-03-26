@@ -37,6 +37,8 @@ func setupFixtures() {
 			"kamisama.performers": anonAll[34].Performers,
 			"fujita":              anonAll[17],
 			"fujita.all":          anonAll[17].Contents,
+			"100man":              anonAll[0],
+			"sorasara":            anonAll[3],
 			"signin":              anon.State.Signin,
 		},
 		"paid": {
@@ -99,6 +101,20 @@ func TestVideoRadioShow(t *testing.T) {
 	_, ok := NewRadioShow(&p).Episodes()[0].(adapter.Video)
 
 	assert.Equal(t, true, ok)
+}
+
+func TestRadioShowWithNoUpdatedTime(t *testing.T) {
+	// no updated, but have contents, we take it
+	p := fts["anon"]["100man"].(nuxt.Program)
+	r := NewRadioShow(&p)
+
+	assert.Equal(t, r.Episodes()[0].GuessedPublishedAt(), r.GuessedUpdatedAt())
+
+	// no updated, no contents (pre-announced show)
+	p = fts["anon"]["sorasara"].(nuxt.Program)
+	r = NewRadioShow(&p)
+
+	assert.Equal(t, time.Time{}, r.GuessedUpdatedAt())
 }
 
 func TestNilNewEpisode(t *testing.T) {

@@ -27,8 +27,23 @@ func (r radioShow) HasUpdates() bool {
 	return r.raw.New
 }
 
+// Returns a best-effor time that is guessed based on time.Now().
+// Since there is no YYYY recorded in onsen's raw data. (MM/DD only)
+// An empty time.Time{} means there is an invalid date pattern or just not having a time.
 func (r radioShow) GuessedUpdatedAt() time.Time {
-	return GuessJstTimeWithNow(r.raw.Updated)
+	t := r.raw.Updated
+	if t == nil {
+		// Null updated can be found if:
+		// * the radio is just announced, not having content yet, or
+		// * it got re-announced and they didn't set an updated time
+		//
+		// Manually set to the latest one if it has contents
+		if cs := r.raw.Contents; len(cs) == 0 || cs[0].DeliveryDate == "" {
+			return time.Time{}
+		}
+		t = &r.raw.Contents[0].DeliveryDate
+	}
+	return GuessJstTimeWithNow(*t)
 }
 
 func (r radioShow) Hosts() []adapter.Person {

@@ -48,7 +48,7 @@ func TestNonlogined(t *testing.T) {
 	assert.Equal(t, "kamisama-day", kami.DirectoryName)
 	assert.Equal(t, "神様になったラジオ", kami.Title)
 	assert.Equal(t, false, kami.New)
-	assert.Equal(t, "3/19", kami.Updated)
+	assert.Equal(t, "3/19", *kami.Updated)
 	assert.Equal(
 		t,
 		[]Performer{
@@ -96,7 +96,7 @@ func TestPaidMember(t *testing.T) {
 	assert.Equal(t, "kamisama-day", kami.DirectoryName)
 	assert.Equal(t, "神様になったラジオ", kami.Title)
 	assert.Equal(t, false, kami.New)
-	assert.Equal(t, "3/19", kami.Updated)
+	assert.Equal(t, "3/19", *kami.Updated)
 	assert.Equal(
 		t,
 		[]Performer{
@@ -108,6 +108,25 @@ func TestPaidMember(t *testing.T) {
 
 	assert.Equal(t, 8, len(kami.Contents))
 	assert.Equal(t, "HAS_BEEN_SCREENED", *kami.Contents[1].StreamingUrl)
+}
+
+func TestNoUpdatedTime(t *testing.T) {
+	content, _ := os.ReadFile("testdata/fixture_nologin_screened.json")
+
+	nuxt, err := Parse(string(content))
+
+	assert.Nil(t, err)
+
+	all := nuxt.State.Programs.Programs.All
+
+	p1 := all[0]
+	p2 := all[3]
+
+	assert.Equal(t, "100man", p1.DirectoryName)
+	assert.Nil(t, p1.Updated)
+
+	assert.Equal(t, "sorasara", p2.DirectoryName)
+	assert.Nil(t, p2.Updated)
 }
 
 func Example() {
