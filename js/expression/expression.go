@@ -1,34 +1,22 @@
-// Package expression wraps a `goja` vm to run a given JavaScript expression.
+// Package expression is a wrapper of github.com/dop251/goja to run Javascript code (expressions) for deobfuscation.
 package expression
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/dop251/goja"
 )
 
-type Expression interface {
-	// Run the contained JavaScript code which produces a *value*, i.e. expressions.
-	// Returns a string of the value's JSON representation and any JS error encountered,
-	// such as exceptions, syntax errors and expressions that were evaluated to `undefined`.
-	Stringify() (string, error)
-}
-
-type expression struct {
+type Expression struct {
 	js string
 	vm *goja.Runtime
 }
 
-// Takes a piece of JavaScript code to be evaluated.
-func New(js string) Expression {
-	return &expression{
-		js: js,
-	}
-}
-
-func (e *expression) Stringify() (string, error) {
-	torun := fmt.Sprintf("JSON.stringify(%s)", e.js)
+// Run the given JavaScript code which can produces a *value*, i.e. expressions.
+// Returns a string of the value's JSON representation and any JS error encountered.
+// Note that "undefined" is also considered as an error.
+func (e *Expression) Stringify() (json string, err error) {
+	torun := fmt.Sprintf("JSON.stringify(%s)", string(e.js))
 
 	res, err := e.getVm().RunString(torun)
 	if err != nil {
@@ -37,18 +25,21 @@ func (e *expression) Stringify() (string, error) {
 
 	out := res.Export()
 	if out == nil {
-		err = errors.New(
-			"We got nothing after running. Possibly the js returned an undefined.",
-		)
-		return "", err
+		return "", fmt.Errorf("Got nothing after running. Possibly the js returned an undefined.\n")
 	}
 
 	return out.(string), nil
 }
 
-func (e *expression) getVm() *goja.Runtime {
+func (e *Expression) getVm() *goja.Runtime {
 	if e.vm == nil {
 		e.vm = goja.New()
 	}
 	return e.vm
+}
+
+func From(js string) *Expression {
+	return &Expression{
+		js: js,
+	}
 }

@@ -1,7 +1,6 @@
 package expression
 
 import (
-	"errors"
 	"fmt"
 	"testing"
 
@@ -10,27 +9,27 @@ import (
 )
 
 func TestUndefined(t *testing.T) {
-	e := New("")
+	e := From("")
 	res, err := e.Stringify()
 
 	assert.Equal(t, "", res)
-	assert.Equal(t, errors.New("We got nothing after running. Possibly the js returned an undefined."), err)
+	assert.Equal(t, fmt.Errorf("Got nothing after running. Possibly the js returned an undefined.\n"), err)
 }
 
 func TestSyntaxError(t *testing.T) {
-	e := New(";")
+	e := From(";")
 	res, err := e.Stringify()
 
 	assert.Equal(t, "", res)
 
 	_, ok := err.(*goja.Exception)
-	assert.Equal(t, true, ok)
+	assert.True(t, ok)
 }
 
 func Example() {
-	e := New("(function(x) {return {hello: x}})('world')")
-	res, err := e.Stringify()
+	e := From("(function(x) {return {hello: x}})('world')")
 
+	res, err := e.Stringify()
 	if err != nil {
 		panic(err)
 	}
