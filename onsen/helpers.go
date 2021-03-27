@@ -1,19 +1,17 @@
-// Package html provides utilities to handle web page https://onsen.ag/.
-package html
+package onsen
 
 import (
 	"regexp"
 )
 
-// Parse the html content and return a pointer to the capture of first appeared NUXT data object:
+// Returns a byte slice to the capture of first appeared NUXT pattern:
 //   <script>window.__NUXT__=([^<]+);</script>
-// Returns nil if not found.
-func FindNuxtExpression(html string) *string {
+func FindNuxtExpression(html []byte) (expr []byte, ok bool) {
 	re := regexp.MustCompile("<script>window.__NUXT__=([^<]+);</script>")
 
-	m := re.FindStringSubmatch(html)
+	m := re.FindSubmatch(html)
 	if m == nil {
-		return nil
+		return nil, false
 	}
-	return &m[1]
+	return m[1], true
 }
