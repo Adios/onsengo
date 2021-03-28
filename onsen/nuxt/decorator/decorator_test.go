@@ -1,6 +1,7 @@
 package decorator
 
 import (
+	"bytes"
 	"os"
 	"testing"
 	"time"
@@ -22,8 +23,8 @@ func setupFixtures() {
 		panic(err)
 	}
 
-	anon, _ := nuxt.Parse(string(a))
-	paid, _ := nuxt.Parse(string(b))
+	anon, _ := nuxt.FromReader(bytes.NewReader(a))
+	paid, _ := nuxt.FromReader(bytes.NewReader(b))
 
 	anonAll := anon.State.Programs.Programs.All
 	paidAll := paid.State.Programs.Programs.All
@@ -216,7 +217,7 @@ func TestAdapterFromNil(t *testing.T) {
 	assert.Panics(t, func() { DecoratorFrom(nil) }, "Cannot be nil")
 }
 func TestAdapterFromPaid(t *testing.T) {
-	r := DecoratorFrom(fts["paid"]["nuxt"].(*nuxt.Nuxt))
+	r := DecoratorFrom(fts["paid"]["nuxt"].(*nuxt.Root))
 
 	assert.Equal(t, 128, len(r.RadioShows()))
 	assert.Equal(t, "tsudaken", r.RadioShows()[17].Name())
@@ -226,7 +227,7 @@ func TestAdapterFromPaid(t *testing.T) {
 	assert.NotNil(t, u)
 }
 func TestAdapterFromAnonymous(t *testing.T) {
-	r := DecoratorFrom(fts["anon"]["nuxt"].(*nuxt.Nuxt))
+	r := DecoratorFrom(fts["anon"]["nuxt"].(*nuxt.Root))
 
 	assert.Equal(t, 128, len(r.RadioShows()))
 

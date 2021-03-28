@@ -11,7 +11,7 @@ import (
 
 // Transforms nuxt.Nuxt
 type Decorator struct {
-	Raw *nuxt.Nuxt
+	Raw *nuxt.Root
 }
 
 func (d Decorator) EachRadioShow(fn func(RadioShow)) {
@@ -40,7 +40,7 @@ func (d Decorator) User() (u User, ok bool) {
 	return UserFrom(d.Raw.State.Signin), true
 }
 
-func DecoratorFrom(n *nuxt.Nuxt) Decorator {
+func DecoratorFrom(n *nuxt.Root) Decorator {
 	if n == nil {
 		panic("Cannot be nil")
 	}
