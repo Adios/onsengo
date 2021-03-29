@@ -1,273 +1,341 @@
-// Package adapter implements onsen.adapter and encapsulates nuxt objects.
+// Package decorator transforms wrapped raw https://onsen.ag/ data (nuxt) for further use.
 package decorator
 
 import (
-	"fmt"
 	"regexp"
 	"strconv"
 	"time"
 
-	"github.com/adios/onsengo/onsen/adapter"
 	"github.com/adios/onsengo/onsen/nuxt"
 )
 
-// Adapter wraps an instance of nuxt.Nuxt to transform output on the fly.
-type nuxtAdapter struct {
-	raw *nuxt.Nuxt
+// Transforms nuxt.Nuxt
+type Decorator struct {
+	Raw *nuxt.Nuxt
 }
 
-func (a nuxtAdapter) RadioShows() []adapter.RadioShow {
-	all := a.raw.State.Programs.Programs.All
+func (d Decorator) EachRadioShow(fn func(RadioShow)) {
+	all := d.Raw.State.Programs.Programs.All
 
-	out := make([]adapter.RadioShow, 0, len(all))
 	for i := range all {
-		out = append(out, NewRadioShow(&all[i]))
+		fn(RadioShowFrom(&all[i]))
 	}
+}
+
+// Always returns a non-nil slice copy.
+func (d Decorator) RadioShows() []RadioShow {
+	out := make([]RadioShow, 0, len(d.Raw.State.Programs.Programs.All))
+
+	d.EachRadioShow(func(r RadioShow) {
+		out = append(out, r)
+	})
 	return out
 }
 
-func (a nuxtAdapter) User() adapter.User {
-	if a.raw.State.Signin == nil {
-		return nil
+// Returns an empty User{} if there is no session associated.
+func (d Decorator) User() (u User, ok bool) {
+	if d.Raw.State.Signin == nil {
+		return User{}, false
 	}
-
-	u := NewUser(a.raw.State.Signin)
-	return u
+	return UserFrom(d.Raw.State.Signin), true
 }
 
-func NewAdapter(n *nuxt.Nuxt) adapter.Adapter {
+func DecoratorFrom(n *nuxt.Nuxt) Decorator {
 	if n == nil {
 		panic("Cannot be nil")
 	}
-	return nuxtAdapter{n}
+	return Decorator{n}
 }
 
-type user struct {
-	raw *nuxt.Signin
+// Transforms nuxt.Program
+type RadioShow struct {
+	Raw *nuxt.Program
 }
 
-func (u user) Email() string {
-	return u.raw.Email
+func (r RadioShow) RadioShowId() RadioShowId {
+	return RadioShowId(r.Raw.Id)
 }
 
-func (u user) UserId() string {
-	return u.raw.Id
+func (r RadioShow) Name() string {
+	return r.Raw.DirectoryName
 }
 
-func (u user) FollowingPeople() []uint {
-	ps := u.raw.FavoritePerformerIds
-
-	out := make([]uint, 0, len(ps))
-	for _, pid := range ps {
-		out = append(out, uint(pid))
-	}
-	return out
+func (r RadioShow) Title() string {
+	return r.Raw.Title
 }
 
-func (u user) FollowingRadioShows() []uint {
-	ps := u.raw.FavoriteProgramIds
-
-	out := make([]uint, 0, len(ps))
-	for _, pid := range ps {
-		out = append(out, uint(pid))
-	}
-	return out
+func (r RadioShow) HasBeenUpdated() bool {
+	return r.Raw.New
 }
 
-func (u user) PlayingEpisodes() []uint {
-	cs := u.raw.PlaylistedContentIds
+// Returns the time in which its year component (YYYY) is never after now year.
+// It's doing so because onsen.ag gives the value without a year component, i.e. only "MM/DD".
+// We have to guess the YYYY by ourself in order to make this field useful.
+//
+// If the raw value isn't in MM/DD format, an time.Time{} will be returned.
+//
+// The timezone associated is UTC+9 for all successful returns.
+//
+// BUG(adios): It's possible we returns a time with wrong YYYY value.
+func (r RadioShow) JstUpdatedAt() (res time.Time, ok bool) {
+	t := r.Raw.Updated
 
-	out := make([]uint, 0, len(cs))
-	for _, cid := range cs {
-		out = append(out, uint(cid))
-	}
-	return out
-}
-
-// User wraps an instance of nuxt.Signin to transform output on the fly.
-func NewUser(s *nuxt.Signin) adapter.User {
-	if s == nil {
-		panic("Cannot be nil")
-	}
-	return user{s}
-}
-
-type radioShow struct {
-	raw *nuxt.Program
-}
-
-func (r radioShow) RadioShowId() uint {
-	return uint(r.raw.Id)
-}
-
-func (r radioShow) Name() string {
-	return r.raw.DirectoryName
-}
-
-func (r radioShow) Title() string {
-	return r.raw.Title
-}
-
-func (r radioShow) HasUpdates() bool {
-	return r.raw.New
-}
-
-// Returns a best-effor time that is guessed based on time.Now().
-// Since there is no YYYY recorded in onsen's raw data. (MM/DD only)
-// An empty time.Time{} means there is an invalid date pattern or just not having a time.
-func (r radioShow) GuessedUpdatedAt() time.Time {
-	t := r.raw.Updated
+	// Try using first (latest) episode's MM/DD if current show has no MM/DD
 	if t == nil {
-		// Null updated can be found if:
-		// * the radio is just announced, not having content yet, or
-		// * it got re-announced and they didn't set an updated time
-		//
-		// Manually set to the latest one if it has contents
-		if cs := r.raw.Contents; len(cs) == 0 || cs[0].DeliveryDate == "" {
-			return time.Time{}
+		if cs := r.Raw.Contents; len(cs) == 0 || cs[0].DeliveryDate == "" {
+			return time.Time{}, false
 		}
-		t = &r.raw.Contents[0].DeliveryDate
+		t = &r.Raw.Contents[0].DeliveryDate
 	}
 	return GuessJstTimeWithNow(*t)
 }
 
-func (r radioShow) Hosts() []adapter.Person {
-	ps := r.raw.Performers
+func (r RadioShow) EachHost(fn func(host Person)) {
+	ps := r.Raw.Performers
 
-	out := make([]adapter.Person, 0, len(ps))
 	for i := range ps {
-		out = append(out, NewPerson(&ps[i]))
+		fn(PersonFrom(&ps[i]))
 	}
+}
 
+// Always returns a non-nil slice copy.
+func (r RadioShow) Hosts() []Person {
+	out := make([]Person, 0, len(r.Raw.Performers))
+
+	r.EachHost(func(p Person) {
+		out = append(out, p)
+	})
 	return out
 }
 
-func (r radioShow) Episodes() []adapter.Episode {
-	cs := r.raw.Contents
+func (r RadioShow) EachEpisode(fn func(Episode)) {
+	cs := r.Raw.Contents
 
-	out := make([]adapter.Episode, 0, len(cs))
 	for i := range cs {
-		out = append(out, NewEpisode(&cs[i]))
+		fn(EpisodeFrom(&cs[i]))
 	}
+}
 
+// Always returns a non-nil slice copy.
+func (r RadioShow) Episodes() []Episode {
+	out := make([]Episode, 0, len(r.Raw.Contents))
+
+	r.EachEpisode(func(e Episode) {
+		out = append(out, e)
+	})
 	return out
 }
 
-// RadioShow wraps an instance of nuxt.Program to transform output on the fly.
-func NewRadioShow(p *nuxt.Program) adapter.RadioShow {
+func RadioShowFrom(p *nuxt.Program) RadioShow {
 	if p == nil {
 		panic("Cannot be nil")
 	}
-	return radioShow{p}
+	return RadioShow{p}
 }
 
-type person struct {
-	raw *nuxt.Performer
+// Transforms nuxt.Content
+type Episode struct {
+	Raw *nuxt.Content
 }
 
-func (p person) PersonId() uint {
-	return uint(p.raw.Id)
+func (e Episode) EpisodeId() EpisodeId {
+	return EpisodeId(e.Raw.Id)
 }
 
-func (p person) Name() string {
-	return p.raw.Name
+func (e Episode) RadioShowId() RadioShowId {
+	return RadioShowId(e.Raw.ProgramId)
 }
 
-// Person wraps an instance of nuxt.Performer to transform output on the fly.
-func NewPerson(p *nuxt.Performer) adapter.Person {
-	if p == nil {
-		panic("Cannot be nil")
-	}
-	return person{p}
+func (e Episode) Title() string {
+	return e.Raw.Title
 }
 
-type episode struct {
-	raw *nuxt.Content
-}
-type audioEpisode struct{ episode }
-type videoEpisode struct{ episode }
-
-func (a audioEpisode) Audio() {}
-func (v videoEpisode) Video() {}
-
-func (e episode) EpisodeId() uint {
-	return uint(e.raw.Id)
+// The URL of episode's poster image.
+func (e Episode) Poster() (url string) {
+	return e.Raw.PosterImageUrl
 }
 
-func (e episode) RadioShowId() uint {
-	return uint(e.raw.ProgramId)
-}
+// The URL of episode's m3u8 manifest. An empty string means the resource is not accessible with current session.
+func (e Episode) Manifest() (url string, ok bool) {
+	str := e.Raw.StreamingUrl
 
-func (e episode) Title() string {
-	return e.raw.Title
-}
-
-func (e episode) Poster() string {
-	return e.raw.PosterImageUrl
-}
-
-func (e episode) Manifest() string {
-	str := e.raw.StreamingUrl
 	if str == nil {
-		return ""
+		return "", false
 	}
-	return *str
+	return *str, true
 }
 
-func (e episode) GuessedPublishedAt() time.Time {
-	return GuessJstTimeWithNow(e.raw.DeliveryDate)
+// Returns the time in which its year component (YYYY) is never after now year.
+// It's doing so because onsen.ag gives the value without a year component, i.e. only "MM/DD".
+// We have to guess the YYYY by ourself in order to make this field useful.
+//
+// If the raw value isn't in MM/DD format, an time.Time{} will be returned.
+//
+// The timezone associated is UTC+9 for all successful returns.
+//
+// BUG(adios): It's possible we returns a time with wrong YYYY value.
+func (e Episode) JstUpdatedAt() (res time.Time, ok bool) {
+	return GuessJstTimeWithNow(e.Raw.DeliveryDate)
 }
 
-func (e episode) Guests() []string {
-	return e.raw.Guests
+func (e Episode) EachGuest(fn func(name string)) {
+	for _, g := range e.Raw.Guests {
+		fn(g)
+	}
 }
 
-func (e episode) IsBonus() bool {
-	return e.raw.Bonus
+// Always returns a non-nil slice copy.
+func (e Episode) Guests() (names []string) {
+	out := make([]string, len(e.Raw.Guests))
+
+	// safe to copy, e.raw.Guests will never be a nil slice.
+	copy(out, e.Raw.Guests)
+	return out
 }
 
-func (e episode) IsSticky() bool {
-	return e.raw.Sticky
+func (e Episode) IsBonus() bool {
+	return e.Raw.Bonus
 }
 
-func (e episode) IsLatest() bool {
-	return e.raw.Latest
+func (e Episode) IsSticky() bool {
+	return e.Raw.Sticky
 }
 
-func (e episode) RequiresPremium() bool {
-	return e.raw.Premium
+func (e Episode) IsLatest() bool {
+	return e.Raw.Latest
 }
 
-// episode wraps an instance of nuxt.Content to transform output on the fly.
-func NewEpisode(c *nuxt.Content) adapter.Episode {
+func (e Episode) RequiresPremium() bool {
+	return e.Raw.Premium
+}
+
+func (e Episode) HasVideoStream() bool {
+	return e.Raw.Movie
+}
+
+func EpisodeFrom(c *nuxt.Content) Episode {
 	if c == nil {
 		panic("Cannot be nil")
 	}
-
-	var e adapter.Episode
-
-	switch c.MediaType {
-	case "sound":
-		e = audioEpisode{episode{c}}
-	case "movie":
-		e = videoEpisode{episode{c}}
-	default:
-		panic(
-			fmt.Sprintf("Content %d: unknown media type\n", c.Id),
-		)
-	}
-
-	return e
+	return Episode{c}
 }
 
-// Given an incomplete date string in the format "MM/DD", and with a referenced date.
-// The function finds a nearest year such that "YYYY/MM/DD" doesn't go over the referenced date.
-func GuessTime(guess string, reference time.Time) time.Time {
+// Transforms nuxt.Signin
+type User struct {
+	Raw *nuxt.Signin
+}
+
+func (u User) Email() string {
+	return u.Raw.Email
+}
+
+func (u User) UserId() UserId {
+	return UserId(u.Raw.Id)
+}
+
+func (u User) EachFollowingPerson(fn func(id PersonId)) {
+	for _, id := range u.Raw.FavoritePerformerIds {
+		fn(PersonId(id))
+	}
+}
+
+// Always returns a non-nil slice copy.
+func (u User) FollowingPeople() []PersonId {
+	out := make([]PersonId, 0, len(u.Raw.FavoritePerformerIds))
+
+	u.EachFollowingPerson(func(id PersonId) {
+		out = append(out, id)
+	})
+	return out
+}
+
+func (u User) EachFollowingShow(fn func(id RadioShowId)) {
+	for _, id := range u.Raw.FavoriteProgramIds {
+		fn(RadioShowId(id))
+	}
+}
+
+// Always returns a non-nil slice copy.
+func (u User) FollowingShows() []RadioShowId {
+	out := make([]RadioShowId, 0, len(u.Raw.FavoriteProgramIds))
+
+	u.EachFollowingShow(func(id RadioShowId) {
+		out = append(out, id)
+	})
+	return out
+}
+
+func (u User) EachPlaylistEpisode(fn func(id EpisodeId)) {
+	for _, id := range u.Raw.PlaylistedContentIds {
+		fn(EpisodeId(id))
+	}
+}
+
+// Always returns a non-nil slice copy.
+func (u User) PlaylistEpisodes() []EpisodeId {
+	out := make([]EpisodeId, 0, len(u.Raw.PlaylistedContentIds))
+
+	u.EachPlaylistEpisode(func(id EpisodeId) {
+		out = append(out, id)
+	})
+	return out
+}
+
+func UserFrom(s *nuxt.Signin) User {
+	if s == nil {
+		panic("Cannot be nil")
+	}
+	return User{s}
+}
+
+// Transforms nuxt.Performer
+type Person struct {
+	Raw *nuxt.Performer
+}
+
+func (p Person) PersonId() PersonId {
+	return PersonId(p.Raw.Id)
+}
+
+func (p Person) Name() string {
+	return p.Raw.Name
+}
+
+func PersonFrom(p *nuxt.Performer) Person {
+	if p == nil {
+		panic("Cannot be nil")
+	}
+	return Person{p}
+}
+
+type EpisodeId uint
+
+func (id EpisodeId) String() string {
+	return strconv.FormatUint(uint64(id), 10)
+}
+
+type PersonId uint
+
+func (id PersonId) String() string {
+	return strconv.FormatUint(uint64(id), 10)
+}
+
+type RadioShowId uint
+
+func (id RadioShowId) String() string {
+	return strconv.FormatUint(uint64(id), 10)
+}
+
+type UserId string
+
+// Given a date string with no YYYY component (MM/DD) and a referenced time (usually now),
+// we find a most recent year (YYYY) such that YYYY/MM/DD won't go over the referenced time.
+func GuessTime(guess string, ref time.Time) (res time.Time, ok bool) {
 	re := regexp.MustCompile("^([0-9]{1,2})/([0-9]{1,2})$")
 	m := re.FindStringSubmatch(guess)
 
 	if m == nil {
-		return time.Time{}
+		return time.Time{}, false
 	}
 
 	guessMonth, err := strconv.Atoi(m[1])
@@ -280,21 +348,21 @@ func GuessTime(guess string, reference time.Time) time.Time {
 	}
 
 	attemptTime := time.Date(
-		reference.Year(),
+		ref.Year(),
 		time.Month(guessMonth),
 		guessDay, 0, 0, 0, 0,
-		reference.Location(),
+		ref.Location(),
 	)
 
-	if attemptTime.After(reference) {
-		return attemptTime.AddDate(-1, 0, 0)
+	if attemptTime.After(ref) {
+		return attemptTime.AddDate(-1, 0, 0), true
 	} else {
-		return attemptTime
+		return attemptTime, true
 	}
 }
 
-// Based on the GuessTime() function, here we set a timezone of UTC+9 and use time.Now() as a referenced date.
-func GuessJstTimeWithNow(guess string) time.Time {
+// Set a zone of UTC+9 on top of GuessTime().
+func GuessJstTimeWithNow(guess string) (res time.Time, ok bool) {
 	loc := time.FixedZone("UTC+9", 9*60*60)
 	now := time.Now().In(loc)
 

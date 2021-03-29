@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/adios/onsengo/onsen/adapter"
-	"github.com/adios/onsengo/onsen/nuxt"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/adios/onsengo/onsen/nuxt"
 )
 
 var fts map[string]map[string]interface{}
@@ -56,32 +56,37 @@ func TestMain(m *testing.M) {
 	os.Exit(ret)
 }
 
-func TestNilNewPerson(t *testing.T) {
-	assert.Panics(t, func() { NewPerson(nil) }, "Cannot be nil")
+func TestPersonFromNil(t *testing.T) {
+	assert.Panics(t, func() { PersonFrom(nil) }, "Cannot be nil")
 }
 func TestPerson(t *testing.T) {
-	p := NewPerson(&fts["anon"]["kamisama.performers"].([]nuxt.Performer)[0])
+	p := PersonFrom(&fts["anon"]["kamisama.performers"].([]nuxt.Performer)[0])
 
-	assert.Equal(t, uint(55), p.PersonId())
+	assert.Equal(t, PersonId(55), p.PersonId())
 	assert.Equal(t, "佐倉綾音", p.Name())
 }
 
-func TestNilNewRadioShow(t *testing.T) {
-	assert.Panics(t, func() { NewRadioShow(nil) }, "Cannot be nil")
+func TestRadioShowFromNil(t *testing.T) {
+	assert.Panics(t, func() { RadioShowFrom(nil) }, "Cannot be nil")
 }
-func TestAudioRadioShow(t *testing.T) {
+func TestRadioShow(t *testing.T) {
 	p := fts["anon"]["kamisama"].(nuxt.Program)
-	r := NewRadioShow(&p)
+	r := RadioShowFrom(&p)
 
-	assert.Equal(t, uint(139), r.RadioShowId())
+	assert.Equal(t, RadioShowId(139), r.RadioShowId())
 	assert.Equal(t, "kamisama-day", r.Name())
 	assert.Equal(t, "神様になったラジオ", r.Title())
-	assert.Equal(t, false, r.HasUpdates())
+	assert.False(t, r.HasBeenUpdated())
 
-	// Year depends on time.Now()
-	at := r.GuessedUpdatedAt()
+	// Skip check year as it's dependent on time.Now().
+	at, ok := r.JstUpdatedAt()
+	assert.True(t, ok)
 	assert.Equal(t, time.Month(3), at.Month())
 	assert.Equal(t, 19, at.Day())
+
+	name, offset := at.Zone()
+	assert.Equal(t, "UTC+9", name)
+	assert.Equal(t, 9*60*60, offset)
 
 	h := r.Hosts()
 	assert.Equal(t, 2, len(h))
@@ -92,49 +97,49 @@ func TestAudioRadioShow(t *testing.T) {
 	assert.Equal(t, 8, len(e))
 	assert.Equal(t, "第12回", e[0].Title())
 	assert.Equal(t, "第12回 おまけ", e[1].Title())
-
-	_, ok := e[0].(adapter.Audio)
-	assert.Equal(t, true, ok)
-}
-func TestVideoRadioShow(t *testing.T) {
-	p := fts["anon"]["fujita"].(nuxt.Program)
-	_, ok := NewRadioShow(&p).Episodes()[0].(adapter.Video)
-
-	assert.Equal(t, true, ok)
 }
 
 func TestRadioShowWithNoUpdatedTime(t *testing.T) {
 	// no updated, but have contents, we take it
 	p := fts["anon"]["100man"].(nuxt.Program)
-	r := NewRadioShow(&p)
+	r := RadioShowFrom(&p)
 
-	assert.Equal(t, r.Episodes()[0].GuessedPublishedAt(), r.GuessedUpdatedAt())
+	showTime, ok := r.JstUpdatedAt()
+	assert.True(t, ok)
+
+	epTime, ok := r.Episodes()[0].JstUpdatedAt()
+	assert.True(t, ok)
+	assert.Equal(t, epTime, showTime)
 
 	// no updated, no contents (pre-announced show)
 	p = fts["anon"]["sorasara"].(nuxt.Program)
-	r = NewRadioShow(&p)
+	r = RadioShowFrom(&p)
 
-	assert.Equal(t, time.Time{}, r.GuessedUpdatedAt())
+	showTime, ok = r.JstUpdatedAt()
+	assert.False(t, ok)
+	assert.Equal(t, time.Time{}, showTime)
 }
 
-func TestNilNewEpisode(t *testing.T) {
-	assert.Panics(t, func() { NewEpisode(nil) }, "Cannot be nil")
+func TestEpisodeFromNil(t *testing.T) {
+	assert.Panics(t, func() { EpisodeFrom(nil) }, "Cannot be nil")
 }
-func TestAudioEpisodeWithGuestNoManifest(t *testing.T) {
+func TestEpisodeWithAudioGuestsButManifest(t *testing.T) {
 	cs := fts["anon"]["kamisama.all"].([]nuxt.Content)
-	e := NewEpisode(&cs[6])
+	e := EpisodeFrom(&cs[6])
 
-	_, ok := e.(adapter.Audio)
-	assert.Equal(t, true, ok)
-
-	assert.Equal(t, uint(3114), e.EpisodeId())
-	assert.Equal(t, uint(139), e.RadioShowId())
+	assert.Equal(t, EpisodeId(3114), e.EpisodeId())
+	assert.Equal(t, RadioShowId(139), e.RadioShowId())
 	assert.Equal(t, "第9回", e.Title())
 
-	// Year depends on time.Now()
-	at := e.GuessedPublishedAt()
+	// Skip check year as it's dependent on time.Now().
+	at, ok := e.JstUpdatedAt()
+	assert.True(t, ok)
 	assert.Equal(t, time.Month(2), at.Month())
 	assert.Equal(t, 5, at.Day())
+
+	name, offset := at.Zone()
+	assert.Equal(t, "UTC+9", name)
+	assert.Equal(t, 9*60*60, offset)
 
 	assert.Equal(
 		t,
@@ -142,46 +147,50 @@ func TestAudioEpisodeWithGuestNoManifest(t *testing.T) {
 			"/66/99/05f3c9402ca36cc3156dd50b7ab9aad298dd/image?v=1602579721",
 		e.Poster(),
 	)
-	assert.Equal(t, "", e.Manifest())
+
+	m, ok := e.Manifest()
+	assert.False(t, ok)
+	assert.Equal(t, "", m)
+
 	assert.Equal(
 		t,
 		[]string{"重松千晴"},
 		e.Guests(),
 	)
 
-	assert.Equal(t, false, e.IsBonus())
-	assert.Equal(t, false, e.IsSticky())
-	assert.Equal(t, false, e.IsLatest())
-	assert.Equal(t, true, e.RequiresPremium())
-
+	assert.False(t, e.IsBonus())
+	assert.False(t, e.IsSticky())
+	assert.False(t, e.IsLatest())
+	assert.True(t, e.RequiresPremium())
+	assert.False(t, e.HasVideoStream())
 }
-func TestAudioEpisodeWithManifest(t *testing.T) {
+func TestEpisodeWithManifest(t *testing.T) {
 	cs := fts["anon"]["kamisama.all"].([]nuxt.Content)
-	e := NewEpisode(&cs[0])
+	e := EpisodeFrom(&cs[0])
 
-	assert.Equal(t, "HAS_BEEN_SCREENED", e.Manifest())
+	m, ok := e.Manifest()
+	assert.True(t, ok)
+	assert.Equal(t, "HAS_BEEN_SCREENED", m)
 }
 
-func TestVideoEpisode(t *testing.T) {
+func TestEpisodeWithVideo(t *testing.T) {
 	cs := fts["anon"]["fujita.all"].([]nuxt.Content)
-	e := NewEpisode(&cs[0])
+	e := EpisodeFrom(&cs[0])
 
-	_, ok := e.(adapter.Video)
-	assert.Equal(t, true, ok)
-	assert.Equal(t, "HAS_BEEN_SCREENED", e.Manifest())
+	assert.True(t, e.HasVideoStream())
 }
 
-func TestNologinHasNoUser(t *testing.T) {
-	assert.Panics(t, func() { NewUser(fts["anon"]["signin"].(*nuxt.Signin)) }, "Cannot be nil")
+func TestUserFromNil(t *testing.T) {
+	assert.Panics(t, func() { UserFrom(fts["anon"]["signin"].(*nuxt.Signin)) }, "Cannot be nil")
 }
 func TestNewUser(t *testing.T) {
-	u := NewUser(fts["paid"]["signin"].(*nuxt.Signin))
+	u := UserFrom(fts["paid"]["signin"].(*nuxt.Signin))
 
 	assert.Equal(t, "hello@world", u.Email())
-	assert.Equal(t, "0", u.UserId())
+	assert.Equal(t, UserId("0"), u.UserId())
 	assert.Equal(
 		t,
-		[]uint{
+		[]PersonId{
 			1377, 1044, 946, 889, 726, 645, 641,
 			590, 559, 429, 421, 284, 211, 136, 114,
 			113, 105, 77, 66, 55, 396, 29,
@@ -190,44 +199,66 @@ func TestNewUser(t *testing.T) {
 	)
 	assert.Equal(
 		t,
-		[]uint{
+		[]RadioShowId{
 			4, 10, 16, 17, 18, 29, 47, 54, 56, 65, 76,
 			77, 88, 89, 93, 118, 131, 136, 139, 149, 156, 159,
 		},
-		u.FollowingRadioShows(),
+		u.FollowingShows(),
 	)
 	assert.Equal(
 		t,
-		[]uint{3676, 3677},
-		u.PlayingEpisodes(),
+		[]EpisodeId{3676, 3677},
+		u.PlaylistEpisodes(),
 	)
 }
 
-func TestNilNewAdapter(t *testing.T) {
-	assert.Panics(t, func() { NewAdapter(nil) }, "Cannot be nil")
+func TestAdapterFromNil(t *testing.T) {
+	assert.Panics(t, func() { DecoratorFrom(nil) }, "Cannot be nil")
 }
-func TestNewAdapterPaid(t *testing.T) {
-	r := NewAdapter(fts["paid"]["nuxt"].(*nuxt.Nuxt))
+func TestAdapterFromPaid(t *testing.T) {
+	r := DecoratorFrom(fts["paid"]["nuxt"].(*nuxt.Nuxt))
 
 	assert.Equal(t, 128, len(r.RadioShows()))
 	assert.Equal(t, "tsudaken", r.RadioShows()[17].Name())
-	assert.NotNil(t, r.User())
+
+	u, ok := r.User()
+	assert.True(t, ok)
+	assert.NotNil(t, u)
 }
-func TestNewAdapterAnonymous(t *testing.T) {
-	r := NewAdapter(fts["anon"]["nuxt"].(*nuxt.Nuxt))
+func TestAdapterFromAnonymous(t *testing.T) {
+	r := DecoratorFrom(fts["anon"]["nuxt"].(*nuxt.Nuxt))
 
 	assert.Equal(t, 128, len(r.RadioShows()))
-	assert.Nil(t, r.User())
+
+	u, ok := r.User()
+	assert.False(t, ok)
+	assert.Equal(t, User{}, u)
+}
+
+func TestIdConversion(t *testing.T) {
+	assert.Equal(t, "0", PersonId(0).String())
+	assert.Equal(t, "55", PersonId(55).String())
+	assert.Equal(t, "555", RadioShowId(555).String())
+	assert.Equal(t, "5555", EpisodeId(5555).String())
 }
 
 func TestGuessTime(t *testing.T) {
 	ref := time.Date(2021, time.Month(3), 24, 0, 0, 0, 0, time.UTC)
 
-	assert.Equal(t, time.Time{}, GuessTime("2020/202/30", ref))
+	g, ok := GuessTime("2020/202/30", ref)
+	assert.False(t, ok)
+	assert.Equal(t, time.Time{}, g)
 
 	expected := time.Date(2020, time.Month(3), 25, 0, 0, 0, 0, time.UTC)
-	assert.Equal(t, expected, GuessTime("3/25", ref))
+	g, ok = GuessTime("3/25", ref)
+	assert.True(t, ok)
+	assert.Equal(t, expected, g)
 
-	assert.Equal(t, ref.AddDate(0, 0, -1), GuessTime("3/23", ref))
-	assert.Equal(t, ref, GuessTime("3/24", ref))
+	g, ok = GuessTime("3/23", ref)
+	assert.True(t, ok)
+	assert.Equal(t, ref.AddDate(0, 0, -1), g)
+
+	g, ok = GuessTime("3/24", ref)
+	assert.True(t, ok)
+	assert.Equal(t, ref, g)
 }
