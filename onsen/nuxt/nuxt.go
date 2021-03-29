@@ -4,6 +4,7 @@ package nuxt
 import (
 	"encoding/json"
 	"io"
+	"strings"
 )
 
 // Represents the root of a Nuxt JSON object. Decodes only the fields we want.
@@ -78,4 +79,9 @@ func FromReader(r io.Reader) (*Root, error) {
 	}
 
 	return &data, nil
+}
+
+func From(str string) (*Root, error) {
+	r := strings.NewReader(str)
+	return FromReader(r)
 }

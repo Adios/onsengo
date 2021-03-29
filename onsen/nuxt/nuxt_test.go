@@ -3,21 +3,20 @@ package nuxt
 import (
 	"fmt"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestEmptyString(t *testing.T) {
-	nuxt, err := FromReader(strings.NewReader(""))
+	nuxt, err := From("")
 
 	assert.Nil(t, nuxt)
 	assert.NotNil(t, err)
 }
 
 func TestInvalidJsonString(t *testing.T) {
-	nuxt, err := FromReader(strings.NewReader("{}"))
+	nuxt, err := From("{}")
 
 	assert.Nil(t, err)
 

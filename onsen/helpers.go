@@ -4,14 +4,14 @@ import (
 	"regexp"
 )
 
-// Returns a byte slice to the capture of first appeared NUXT pattern:
+// Returns a string to the capture of first appeared NUXT pattern:
 //   <script>window.__NUXT__=([^<]+);</script>
-func FindNuxtExpression(html []byte) (expr []byte, ok bool) {
+func FindNuxtExpression(html string) (expr string, ok bool) {
 	re := regexp.MustCompile("<script>window.__NUXT__=([^<]+);</script>")
 
-	m := re.FindSubmatch(html)
+	m := re.FindStringSubmatch(html)
 	if m == nil {
-		return nil, false
+		return "", false
 	}
 	return m[1], true
 }

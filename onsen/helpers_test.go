@@ -8,14 +8,14 @@ import (
 )
 
 func TestEmptyString(t *testing.T) {
-	expr, ok := FindNuxtExpression([]byte(""))
+	expr, ok := FindNuxtExpression("")
 
-	assert.Nil(t, expr)
+	assert.Empty(t, expr)
 	assert.False(t, ok)
 }
 
 func TextNoNuxtPattern(t *testing.T) {
-	html := []byte("...<script>window.__NUXT__=one</script><script>window.__NUXT__=two</script>...")
+	html := "...<script>window.__NUXT__=one</script><script>window.__NUXT__=two</script>..."
 	expr, ok := FindNuxtExpression(html)
 
 	assert.Nil(t, expr)
@@ -23,7 +23,7 @@ func TextNoNuxtPattern(t *testing.T) {
 }
 
 func TextNuxtPattern(t *testing.T) {
-	html := []byte("...<script>window.__NUXT__=one</script><script>window.__NUXT__=two;</script>...")
+	html := "...<script>window.__NUXT__=one</script><script>window.__NUXT__=two;</script>..."
 	expr, ok := FindNuxtExpression(html)
 
 	assert.Equal(t, "two", string(expr))
@@ -31,12 +31,12 @@ func TextNuxtPattern(t *testing.T) {
 }
 
 func Example() {
-	html := []byte("...<script>window.__NUXT__=one;</script><script>window.__NUXT__=two;</script>...")
+	html := "...<script>window.__NUXT__=one;</script><script>window.__NUXT__=two;</script>..."
 	expr, ok := FindNuxtExpression(html)
 	if !ok {
 		panic("not found")
 	}
 
-	fmt.Println(string(expr))
+	fmt.Println(expr)
 	// Output: one
 }

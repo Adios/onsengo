@@ -16,7 +16,7 @@ type Expression struct {
 // Returns a string of the value's JSON representation and any JS error encountered.
 // Note that "undefined" is also considered as an error.
 func (e *Expression) Stringify() (json string, err error) {
-	torun := fmt.Sprintf("JSON.stringify(%s)", string(e.js))
+	torun := fmt.Sprintf("JSON.stringify(%s)", e.js)
 
 	res, err := e.getVm().RunString(torun)
 	if err != nil {
