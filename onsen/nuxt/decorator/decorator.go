@@ -1,5 +1,5 @@
 // Package adapter implements onsen.adapter and encapsulates nuxt objects.
-package adapter
+package decorator
 
 import (
 	"fmt"
