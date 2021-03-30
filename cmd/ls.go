@@ -10,7 +10,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/adios/onsengo/onsen"
-	"github.com/adios/onsengo/onsen/adapter"
 )
 
 func init() {
@@ -51,24 +50,28 @@ func lsRun(cmd *cobra.Command, args []string) {
 		panic(err)
 	}
 
-	onsen, err := onsen.Create(string(body))
+	o, err := onsen.Create(string(body))
 	if err != nil {
 		panic(err)
 	}
 
 	if len(args) == 0 {
-		rs := onsen.RadioShows()
+		rs := o.RadioShows()
 
 		sort.SliceStable(rs, func(i, j int) bool {
-			return rs[i].GuessedUpdatedAt().Before(rs[j].GuessedUpdatedAt())
+			a, _ := rs[i].JstUpdatedAt()
+			b, _ := rs[j].JstUpdatedAt()
+			return a.Before(b)
 		})
 
 		if recursive {
 			for _, r := range rs {
+				t, _ := r.JstUpdatedAt()
+
 				fmt.Printf(
 					"d---- %3d %s %-20s %s\n",
 					len(r.Episodes()),
-					r.GuessedUpdatedAt().Format("Jan _2 2006"),
+					t.Format("Jan _2 2006"),
 					r.Name(),
 					r.Title(),
 				)
@@ -77,12 +80,16 @@ func lsRun(cmd *cobra.Command, args []string) {
 				for _, e := range es {
 					var latest, playable, bonus, premium string
 
+					et, _ := e.JstUpdatedAt()
+
 					if e.IsLatest() {
 						latest = "*"
 					} else {
 						latest = "-"
 					}
-					if e.Manifest() == "" {
+					em, _ := e.Manifest()
+
+					if em == "" {
 						playable = "-"
 					} else {
 						playable = "r"
@@ -100,7 +107,7 @@ func lsRun(cmd *cobra.Command, args []string) {
 
 					fmt.Printf(
 						"-%s%s%s%s   1 %s %-20s %s\n", playable, bonus, latest, premium,
-						e.GuessedPublishedAt().Format("Jan _2 2006"),
+						et.Format("Jan _2 2006"),
 						r.Name()+"/"+strconv.FormatUint(uint64(e.EpisodeId()), 10),
 						e.Title(),
 					)
@@ -122,11 +129,13 @@ func lsRun(cmd *cobra.Command, args []string) {
 			}
 
 			for _, r := range rs {
+				t, _ := r.JstUpdatedAt()
+
 				fmt.Printf(
 					"d---- %*d %s %-*s %s\n",
 					longestEpisodes,
 					len(r.Episodes()),
-					r.GuessedUpdatedAt().Format("Jan _2 2006"),
+					t.Format("Jan _2 2006"),
 					longestName,
 					r.Name(),
 					r.Title(),
@@ -134,18 +143,8 @@ func lsRun(cmd *cobra.Command, args []string) {
 			}
 		}
 	} else {
-		rs := onsen.RadioShows()
-
-		cache := make(map[string]adapter.RadioShow)
-
-		for _, r := range rs {
-			if r.Name() != "" {
-				cache[r.Name()] = r
-			}
-		}
-
 		for _, arg := range args {
-			v, ok := cache[arg]
+			v, ok := o.RadioShow(onsen.RadioShowName(arg))
 			if ok == false {
 				panic(arg)
 			}
@@ -171,7 +170,10 @@ func lsRun(cmd *cobra.Command, args []string) {
 				} else {
 					latest = "-"
 				}
-				if e.Manifest() == "" {
+
+				em, _ := e.Manifest()
+
+				if em == "" {
 					playable = "-"
 				} else {
 					playable = "r"
@@ -187,9 +189,11 @@ func lsRun(cmd *cobra.Command, args []string) {
 					premium = "-"
 				}
 
+				et, _ := e.JstUpdatedAt()
+
 				fmt.Printf(
 					"-%s%s%s%s 1 %s %-*s %s\n", playable, bonus, latest, premium,
-					e.GuessedPublishedAt().Format("Jan _2 2006"),
+					et.Format("Jan _2 2006"),
 					longestName,
 					arg+"/"+strconv.FormatUint(uint64(e.EpisodeId()), 10),
 					e.Title(),

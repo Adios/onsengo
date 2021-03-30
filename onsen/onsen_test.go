@@ -22,14 +22,31 @@ func TestCreateEmpty(t *testing.T) {
 	assert.Nil(t, o)
 }
 
-func TestOK(t *testing.T) {
+func TestRadioShowCache(t *testing.T) {
 	content, err := os.ReadFile("testdata/fixture_nologin_screened.html")
 	if err != nil {
 		panic(err)
 	}
 
-	o, err := Create(string(content))
-
+	a, err := Create(string(content))
 	assert.Nil(t, err)
-	assert.Equal(t, 128, len(o.RadioShows()))
+	assert.Equal(t, 128, len(a.RadioShows()))
+
+	byNameA, ok := a.RadioShow(RadioShowName("kamisama-day"))
+	assert.True(t, ok)
+
+	byIdA, ok := a.RadioShow(RadioShowId(139))
+	assert.True(t, ok)
+
+	assert.Same(t, byNameA, byIdA)
+
+	b, err := Create(string(content))
+
+	byNameB, ok := b.RadioShow(RadioShowName("kamisama-day"))
+	byIdB, ok := b.RadioShow(RadioShowId(139))
+
+	assert.Same(t, byNameB, byIdB)
+
+	assert.NotSame(t, byNameA, byNameB)
+	assert.Equal(t, byNameA, byNameB)
 }
