@@ -15,24 +15,21 @@ func TestIdConversion(t *testing.T) {
 	assert.Equal(t, "5555", EpisodeId(5555).String())
 }
 
-func TestEmptyString(t *testing.T) {
-	onsen, err := Create("")
+func TestCreateEmpty(t *testing.T) {
+	o, err := Create("")
 
-	assert.NotNil(t, err)
-	assert.Nil(t, onsen)
+	assert.Equal(t, fmt.Errorf("NUXT pattern not matched"), err)
+	assert.Nil(t, o)
 }
 
 func TestOK(t *testing.T) {
-	content, err := os.ReadFile("fixture_onsen.html")
+	content, err := os.ReadFile("testdata/fixture_nologin_screened.html")
 	if err != nil {
 		panic(err)
 	}
 
-	onsen, err := Create(string(content))
+	o, err := Create(string(content))
 
 	assert.Nil(t, err)
-
-	assert.Equal(t, 128, len(onsen.RadioShows()))
-
-	fmt.Printf("{%#v}", onsen.RadioShows())
+	assert.Equal(t, 128, len(o.RadioShows()))
 }
