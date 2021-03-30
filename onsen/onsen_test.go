@@ -8,6 +8,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestIdConversion(t *testing.T) {
+	assert.Equal(t, "0", PersonId(0).String())
+	assert.Equal(t, "55", PersonId(55).String())
+	assert.Equal(t, "555", RadioShowId(555).String())
+	assert.Equal(t, "5555", EpisodeId(5555).String())
+}
+
 func TestEmptyString(t *testing.T) {
 	onsen, err := Create("")
 

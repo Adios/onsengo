@@ -63,7 +63,7 @@ func TestPersonFromNil(t *testing.T) {
 func TestPerson(t *testing.T) {
 	p := PersonFrom(&fts["anon"]["kamisama.performers"].([]nuxt.Performer)[0])
 
-	assert.Equal(t, PersonId(55), p.PersonId())
+	assert.Equal(t, uint(55), p.PersonId())
 	assert.Equal(t, "佐倉綾音", p.Name())
 }
 
@@ -74,7 +74,7 @@ func TestRadioShow(t *testing.T) {
 	p := fts["anon"]["kamisama"].(nuxt.Program)
 	r := RadioShowFrom(&p)
 
-	assert.Equal(t, RadioShowId(139), r.RadioShowId())
+	assert.Equal(t, uint(139), r.RadioShowId())
 	assert.Equal(t, "kamisama-day", r.Name())
 	assert.Equal(t, "神様になったラジオ", r.Title())
 	assert.False(t, r.HasBeenUpdated())
@@ -128,8 +128,8 @@ func TestEpisodeWithAudioGuestsButManifest(t *testing.T) {
 	cs := fts["anon"]["kamisama.all"].([]nuxt.Content)
 	e := EpisodeFrom(&cs[6])
 
-	assert.Equal(t, EpisodeId(3114), e.EpisodeId())
-	assert.Equal(t, RadioShowId(139), e.RadioShowId())
+	assert.Equal(t, uint(3114), e.EpisodeId())
+	assert.Equal(t, uint(139), e.RadioShowId())
 	assert.Equal(t, "第9回", e.Title())
 
 	// Skip check year as it's dependent on time.Now().
@@ -188,10 +188,10 @@ func TestNewUser(t *testing.T) {
 	u := UserFrom(fts["paid"]["signin"].(*nuxt.Signin))
 
 	assert.Equal(t, "hello@world", u.Email())
-	assert.Equal(t, UserId("0"), u.UserId())
+	assert.Equal(t, "0", u.UserId())
 	assert.Equal(
 		t,
-		[]PersonId{
+		[]uint{
 			1377, 1044, 946, 889, 726, 645, 641,
 			590, 559, 429, 421, 284, 211, 136, 114,
 			113, 105, 77, 66, 55, 396, 29,
@@ -200,7 +200,7 @@ func TestNewUser(t *testing.T) {
 	)
 	assert.Equal(
 		t,
-		[]RadioShowId{
+		[]uint{
 			4, 10, 16, 17, 18, 29, 47, 54, 56, 65, 76,
 			77, 88, 89, 93, 118, 131, 136, 139, 149, 156, 159,
 		},
@@ -208,7 +208,7 @@ func TestNewUser(t *testing.T) {
 	)
 	assert.Equal(
 		t,
-		[]EpisodeId{3676, 3677},
+		[]uint{3676, 3677},
 		u.PlaylistEpisodes(),
 	)
 }
@@ -234,13 +234,6 @@ func TestAdapterFromAnonymous(t *testing.T) {
 	u, ok := r.User()
 	assert.False(t, ok)
 	assert.Equal(t, User{}, u)
-}
-
-func TestIdConversion(t *testing.T) {
-	assert.Equal(t, "0", PersonId(0).String())
-	assert.Equal(t, "55", PersonId(55).String())
-	assert.Equal(t, "555", RadioShowId(555).String())
-	assert.Equal(t, "5555", EpisodeId(5555).String())
 }
 
 func TestGuessTime(t *testing.T) {

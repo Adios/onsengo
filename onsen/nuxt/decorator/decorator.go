@@ -52,8 +52,8 @@ type RadioShow struct {
 	Raw *nuxt.Program
 }
 
-func (r RadioShow) RadioShowId() RadioShowId {
-	return RadioShowId(r.Raw.Id)
+func (r RadioShow) RadioShowId() uint {
+	return r.Raw.Id
 }
 
 func (r RadioShow) Name() string {
@@ -138,12 +138,12 @@ type Episode struct {
 	Raw *nuxt.Content
 }
 
-func (e Episode) EpisodeId() EpisodeId {
-	return EpisodeId(e.Raw.Id)
+func (e Episode) EpisodeId() uint {
+	return e.Raw.Id
 }
 
-func (e Episode) RadioShowId() RadioShowId {
-	return RadioShowId(e.Raw.ProgramId)
+func (e Episode) RadioShowId() uint {
+	return e.Raw.ProgramId
 }
 
 func (e Episode) Title() string {
@@ -229,53 +229,53 @@ func (u User) Email() string {
 	return u.Raw.Email
 }
 
-func (u User) UserId() UserId {
-	return UserId(u.Raw.Id)
+func (u User) UserId() string {
+	return u.Raw.Id
 }
 
-func (u User) EachFollowingPerson(fn func(id PersonId)) {
+func (u User) EachFollowingPerson(fn func(id uint)) {
 	for _, id := range u.Raw.FavoritePerformerIds {
-		fn(PersonId(id))
+		fn(id)
 	}
 }
 
 // Always returns a non-nil slice copy.
-func (u User) FollowingPeople() []PersonId {
-	out := make([]PersonId, 0, len(u.Raw.FavoritePerformerIds))
+func (u User) FollowingPeople() []uint {
+	out := make([]uint, 0, len(u.Raw.FavoritePerformerIds))
 
-	u.EachFollowingPerson(func(id PersonId) {
+	u.EachFollowingPerson(func(id uint) {
 		out = append(out, id)
 	})
 	return out
 }
 
-func (u User) EachFollowingShow(fn func(id RadioShowId)) {
+func (u User) EachFollowingShow(fn func(id uint)) {
 	for _, id := range u.Raw.FavoriteProgramIds {
-		fn(RadioShowId(id))
+		fn(id)
 	}
 }
 
 // Always returns a non-nil slice copy.
-func (u User) FollowingShows() []RadioShowId {
-	out := make([]RadioShowId, 0, len(u.Raw.FavoriteProgramIds))
+func (u User) FollowingShows() []uint {
+	out := make([]uint, 0, len(u.Raw.FavoriteProgramIds))
 
-	u.EachFollowingShow(func(id RadioShowId) {
+	u.EachFollowingShow(func(id uint) {
 		out = append(out, id)
 	})
 	return out
 }
 
-func (u User) EachPlaylistEpisode(fn func(id EpisodeId)) {
+func (u User) EachPlaylistEpisode(fn func(id uint)) {
 	for _, id := range u.Raw.PlaylistedContentIds {
-		fn(EpisodeId(id))
+		fn(id)
 	}
 }
 
 // Always returns a non-nil slice copy.
-func (u User) PlaylistEpisodes() []EpisodeId {
-	out := make([]EpisodeId, 0, len(u.Raw.PlaylistedContentIds))
+func (u User) PlaylistEpisodes() []uint {
+	out := make([]uint, 0, len(u.Raw.PlaylistedContentIds))
 
-	u.EachPlaylistEpisode(func(id EpisodeId) {
+	u.EachPlaylistEpisode(func(id uint) {
 		out = append(out, id)
 	})
 	return out
@@ -293,8 +293,8 @@ type Person struct {
 	Raw *nuxt.Performer
 }
 
-func (p Person) PersonId() PersonId {
-	return PersonId(p.Raw.Id)
+func (p Person) PersonId() uint {
+	return p.Raw.Id
 }
 
 func (p Person) Name() string {
@@ -307,26 +307,6 @@ func PersonFrom(p *nuxt.Performer) Person {
 	}
 	return Person{p}
 }
-
-type EpisodeId uint
-
-func (id EpisodeId) String() string {
-	return strconv.FormatUint(uint64(id), 10)
-}
-
-type PersonId uint
-
-func (id PersonId) String() string {
-	return strconv.FormatUint(uint64(id), 10)
-}
-
-type RadioShowId uint
-
-func (id RadioShowId) String() string {
-	return strconv.FormatUint(uint64(id), 10)
-}
-
-type UserId string
 
 // Given a date string with no YYYY component (MM/DD) and a referenced time (usually now),
 // we find a most recent year (YYYY) such that YYYY/MM/DD won't go over the referenced time.
