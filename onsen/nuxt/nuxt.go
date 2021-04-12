@@ -4,6 +4,7 @@ package nuxt
 import (
 	"encoding/json"
 	"io"
+	"strings"
 )
 
 // Represents the root of a Nuxt JSON object. Decodes only the fields we want.
@@ -69,7 +70,7 @@ type Content struct {
 	Guests         []string `json:"guests"`
 }
 
-func Create(r io.Reader) (*Nuxt, error) {
+func CreateFromReader(r io.Reader) (*Nuxt, error) {
 	var n Nuxt
 
 	err := json.NewDecoder(r).Decode(&n)
@@ -78,4 +79,8 @@ func Create(r io.Reader) (*Nuxt, error) {
 	}
 
 	return &n, nil
+}
+
+func Create(str string) (*Nuxt, error) {
+	return CreateFromReader(strings.NewReader(str))
 }

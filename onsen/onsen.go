@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/dop251/goja"
@@ -48,7 +47,7 @@ func Create(html string) (*Onsen, error) {
 		return nil, err
 	}
 
-	n, err := nuxt.Create(strings.NewReader(str))
+	n, err := nuxt.Create(str)
 	if err != nil {
 		return nil, err
 	}

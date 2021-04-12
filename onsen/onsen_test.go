@@ -1,7 +1,6 @@
 package onsen
 
 import (
-	"bytes"
 	"os"
 	"testing"
 	"time"
@@ -78,7 +77,7 @@ func TestNuxtWithAnonymousUser(t *testing.T) {
 	var (
 		assert = assert.New(t)
 		f, _   = os.ReadFile("testdata/fixture_nologin_screened.json")
-		str, _ = nuxt.Create(bytes.NewReader(f))
+		str, _ = nuxt.Create(string(f))
 		n      = Nuxt{str}
 	)
 
@@ -187,7 +186,7 @@ func TestNuxtWithPremiumUser(t *testing.T) {
 	var (
 		assert = assert.New(t)
 		f, _   = os.ReadFile("testdata/fixture_paid_screened.json")
-		str, _ = nuxt.Create(bytes.NewReader(f))
+		str, _ = nuxt.Create(string(f))
 		n      = Nuxt{str}
 	)
 
