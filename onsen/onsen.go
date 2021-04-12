@@ -62,7 +62,7 @@ type Nuxt struct {
 	Raw *nuxt.Nuxt
 }
 
-func (n *Nuxt) EachRadio(fn func(Radio)) {
+func (n Nuxt) EachRadio(fn func(Radio)) {
 	rs := n.programs()
 
 	for i := range rs {
@@ -71,7 +71,7 @@ func (n *Nuxt) EachRadio(fn func(Radio)) {
 }
 
 // Returns a new copy of non-nil slice.
-func (n *Nuxt) Radios() []Radio {
+func (n Nuxt) Radios() []Radio {
 	rs := n.programs()
 	out := make([]Radio, len(rs))
 
@@ -82,14 +82,14 @@ func (n *Nuxt) Radios() []Radio {
 }
 
 // Returns an empty User{} if there is no session associated.
-func (n *Nuxt) User() (u User, ok bool) {
+func (n Nuxt) User() (u User, ok bool) {
 	if n.Raw.State.Signin == nil {
 		return User{}, false
 	}
 	return User{n.Raw.State.Signin}, true
 }
 
-func (n *Nuxt) programs() []nuxt.Program {
+func (n Nuxt) programs() []nuxt.Program {
 	return n.Raw.State.Programs.Programs.All
 }
 
