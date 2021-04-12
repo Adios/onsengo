@@ -4,11 +4,10 @@ package nuxt
 import (
 	"encoding/json"
 	"io"
-	"strings"
 )
 
 // Represents the root of a Nuxt JSON object. Decodes only the fields we want.
-type Root struct {
+type Nuxt struct {
 	Error     interface{} `json:"error"`
 	State     State       `json:"state"`
 	RoutePath string      `json:"routePath"`
@@ -29,15 +28,15 @@ type State struct {
 type Signin struct {
 	Email                string `json:"email"`
 	Id                   string `json:"id"`
-	FavoritePerformerIds []uint `json:"favorite_performer_ids"`
-	FavoriteProgramIds   []uint `json:"favorite_program_ids"`
-	PlaylistedContentIds []uint `json:"playlisted_content_ids"`
+	FavoritePerformerIds []int  `json:"favorite_performer_ids"`
+	FavoriteProgramIds   []int  `json:"favorite_program_ids"`
+	PlaylistedContentIds []int  `json:"playlisted_content_ids"`
 }
 
 // Represents the root.state.programs.programs.all[] of a Nuxt JSON object. Decodes only the fields we want.
 // If a radio series is got announced and it has no contents, as well as some special programs, they will have nil Updated.
 type Program struct {
-	Id            uint        `json:"id"`
+	Id            int         `json:"id"`
 	DirectoryName string      `json:"directory_name"`
 	Title         string      `json:"title"`
 	New           bool        `json:"new"`
@@ -48,21 +47,21 @@ type Program struct {
 
 // Represents the root.state.programs.programs.all[].performers of a Nuxt JSON object. Decodes all fields.
 type Performer struct {
-	Id   uint   `json:"id"`
+	Id   int    `json:"id"`
 	Name string `json:"name"`
 }
 
 // Represents the root.state.programs.programs.all[].Contents[] of a Nuxt JSON object. Decodes only the fields we want.
 // If the current user identity (or anonymous) has no permissions to play the content, StreamingUrl will be nil.
 type Content struct {
-	Id             uint     `json:"id"`
+	Id             int      `json:"id"`
 	Title          string   `json:"title"`
 	Bonus          bool     `json:"bonus"`
 	Sticky         bool     `json:"sticky"`
 	Latest         bool     `json:"latest"`
 	MediaType      string   `json:"media_type"`
 	Premium        bool     `json:"premium"`
-	ProgramId      uint     `json:"program_id"`
+	ProgramId      int      `json:"program_id"`
 	DeliveryDate   string   `json:"delivery_date"`
 	Movie          bool     `json:"movie"`
 	PosterImageUrl string   `json:"poster_image_url"`
@@ -70,18 +69,13 @@ type Content struct {
 	Guests         []string `json:"guests"`
 }
 
-func FromReader(r io.Reader) (*Root, error) {
-	var data Root
+func Create(r io.Reader) (*Nuxt, error) {
+	var n Nuxt
 
-	err := json.NewDecoder(r).Decode(&data)
+	err := json.NewDecoder(r).Decode(&n)
 	if err != nil {
 		return nil, err
 	}
 
-	return &data, nil
-}
-
-func From(str string) (*Root, error) {
-	r := strings.NewReader(str)
-	return FromReader(r)
+	return &n, nil
 }
