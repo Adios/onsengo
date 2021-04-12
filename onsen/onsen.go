@@ -1,70 +1,71 @@
-// Package decorator transforms wrapped raw https://onsen.ag/ data (nuxt) for further use.
-package decorator
+// Package onsen embeds a Nuxt decorator acting as a front-end to clients
+package onsen
 
 import (
+	"fmt"
 	"regexp"
 	"strconv"
 	"time"
 
+	"github.com/dop251/goja"
+
 	"github.com/adios/onsengo/onsen/nuxt"
 )
 
-// Transforms nuxt.Nuxt
-type Decorator struct {
-	Raw *nuxt.Root
+// Transforms nuxt.Nuxt.
+type Nuxt struct {
+	Raw *nuxt.Nuxt
 }
 
-func (d Decorator) EachRadioShow(fn func(RadioShow)) {
-	all := d.Raw.State.Programs.Programs.All
+func (n Nuxt) EachRadio(fn func(Radio)) {
+	rs := n.programs()
 
-	for i := range all {
-		fn(RadioShowFrom(&all[i]))
+	for i := range rs {
+		fn(Radio{&rs[i]})
 	}
 }
 
-// Always returns a non-nil slice copy.
-func (d Decorator) RadioShows() []RadioShow {
-	out := make([]RadioShow, 0, len(d.Raw.State.Programs.Programs.All))
+// Returns a new copy of non-nil slice.
+func (n Nuxt) Radios() []Radio {
+	rs := n.programs()
+	out := make([]Radio, len(rs))
 
-	d.EachRadioShow(func(r RadioShow) {
-		out = append(out, r)
-	})
+	for i := range rs {
+		out[i] = Radio{&rs[i]}
+	}
 	return out
 }
 
 // Returns an empty User{} if there is no session associated.
-func (d Decorator) User() (u User, ok bool) {
-	if d.Raw.State.Signin == nil {
+func (n Nuxt) User() (u User, ok bool) {
+	if n.Raw.State.Signin == nil {
 		return User{}, false
 	}
-	return UserFrom(d.Raw.State.Signin), true
+	return User{n.Raw.State.Signin}, true
 }
 
-func DecoratorFrom(n *nuxt.Root) Decorator {
-	if n == nil {
-		panic("Cannot be nil")
-	}
-	return Decorator{n}
+func (n Nuxt) programs() []nuxt.Program {
+	return n.Raw.State.Programs.Programs.All
 }
 
-// Transforms nuxt.Program
-type RadioShow struct {
+// Transforms nuxt.Program.
+type Radio struct {
 	Raw *nuxt.Program
 }
 
-func (r RadioShow) RadioShowId() RadioShowId {
-	return RadioShowId(r.Raw.Id)
+func (r Radio) Id() int {
+	return r.Raw.Id
 }
 
-func (r RadioShow) Name() string {
+func (r Radio) Name() string {
 	return r.Raw.DirectoryName
 }
 
-func (r RadioShow) Title() string {
+func (r Radio) Title() string {
 	return r.Raw.Title
 }
 
-func (r RadioShow) HasBeenUpdated() bool {
+func (r Radio) HasBeenUpdated() bool {
 	return r.Raw.New
 }
 
@@ -77,7 +78,7 @@ func (r RadioShow) HasBeenUpdated() bool {
 // The timezone associated is UTC+9 for all successful returns.
 //
 // BUG(adios): It's possible we returns a time with wrong YYYY value.
-func (r RadioShow) JstUpdatedAt() (res time.Time, ok bool) {
+func (r Radio) JstUpdatedAt() (res time.Time, ok bool) {
 	t := r.Raw.Updated
 
 	// Try using first (latest) episode's MM/DD if current show has no MM/DD
@@ -90,72 +91,47 @@ func (r RadioShow) JstUpdatedAt() (res time.Time, ok bool) {
 	return GuessJstTimeWithNow(*t)
 }
 
-func (r RadioShow) EachHost(fn func(host Person)) {
-	ps := r.Raw.Performers
-
-	for i := range ps {
-		fn(PersonFrom(&ps[i]))
+// Returns a new copy of non-nil slice.
+func (r Radio) Hosts() []Person {
+	out := make([]Person, len(r.Raw.Performers))
+	for i := range r.Raw.Performers {
+		out[i] = Person{&r.Raw.Performers[i]}
 	}
-}
-
-// Always returns a non-nil slice copy.
-func (r RadioShow) Hosts() []Person {
-	out := make([]Person, 0, len(r.Raw.Performers))
-
-	r.EachHost(func(p Person) {
-		out = append(out, p)
-	})
 	return out
 }
 
-func (r RadioShow) EachEpisode(fn func(Episode)) {
-	cs := r.Raw.Contents
-
-	for i := range cs {
-		fn(EpisodeFrom(&cs[i]))
+// Returns a new copy of non-nil slice.
+func (r Radio) Episodes() []Episode {
+	out := make([]Episode, len(r.Raw.Contents))
+	for i := range r.Raw.Contents {
+		out[i] = Episode{&r.Raw.Contents[i]}
 	}
-}
-
-// Always returns a non-nil slice copy.
-func (r RadioShow) Episodes() []Episode {
-	out := make([]Episode, 0, len(r.Raw.Contents))
-
-	r.EachEpisode(func(e Episode) {
-		out = append(out, e)
-	})
 	return out
 }
 
-func RadioShowFrom(p *nuxt.Program) RadioShow {
-	if p == nil {
-		panic("Cannot be nil")
-	}
-	return RadioShow{p}
-}
-
-// Transforms nuxt.Content
+// Transforms nuxt.Content.
 type Episode struct {
 	Raw *nuxt.Content
 }
 
-func (e Episode) EpisodeId() EpisodeId {
-	return EpisodeId(e.Raw.Id)
+func (e Episode) Id() int {
+	return e.Raw.Id
 }
 
-func (e Episode) RadioShowId() RadioShowId {
-	return RadioShowId(e.Raw.ProgramId)
+func (e Episode) RadioId() int {
+	return e.Raw.ProgramId
 }
 
 func (e Episode) Title() string {
 	return e.Raw.Title
 }
 
-// The URL of episode's poster image.
+// The URL to episode's poster image.
 func (e Episode) Poster() (url string) {
 	return e.Raw.PosterImageUrl
 }
 
-// The URL of episode's m3u8 manifest. An empty string means the resource is not accessible with current session.
+// The URL to episode's m3u8 manifest. An empty string means the resource is not accessible with current session.
 func (e Episode) Manifest() (url string, ok bool) {
 	str := e.Raw.StreamingUrl
 
@@ -178,16 +154,9 @@ func (e Episode) JstUpdatedAt() (res time.Time, ok bool) {
 	return GuessJstTimeWithNow(e.Raw.DeliveryDate)
 }
 
-func (e Episode) EachGuest(fn func(name string)) {
-	for _, g := range e.Raw.Guests {
-		fn(g)
-	}
-}
-
-// Always returns a non-nil slice copy.
+// Returns a new copy of non-nil slice.
 func (e Episode) Guests() (names []string) {
 	out := make([]string, len(e.Raw.Guests))
-
 	// safe to copy, e.raw.Guests will never be a nil slice.
 	copy(out, e.Raw.Guests)
 	return out
@@ -213,14 +182,7 @@ func (e Episode) HasVideoStream() bool {
 	return e.Raw.Movie
 }
 
-func EpisodeFrom(c *nuxt.Content) Episode {
-	if c == nil {
-		panic("Cannot be nil")
-	}
-	return Episode{c}
-}
-
-// Transforms nuxt.Signin
+// Transforms nuxt.Signin.
 type User struct {
 	Raw *nuxt.Signin
 }
@@ -229,111 +191,81 @@ func (u User) Email() string {
 	return u.Raw.Email
 }
 
-func (u User) UserId() UserId {
-	return UserId(u.Raw.Id)
+func (u User) Id() string {
+	return u.Raw.Id
 }
 
-func (u User) EachFollowingPerson(fn func(id PersonId)) {
-	for _, id := range u.Raw.FavoritePerformerIds {
-		fn(PersonId(id))
-	}
-}
-
-// Always returns a non-nil slice copy.
-func (u User) FollowingPeople() []PersonId {
-	out := make([]PersonId, 0, len(u.Raw.FavoritePerformerIds))
-
-	u.EachFollowingPerson(func(id PersonId) {
-		out = append(out, id)
-	})
+// Returns a new copy of non-nil slice.
+func (u User) FollowingPeople() []int {
+	out := make([]int, len(u.Raw.FavoritePerformerIds))
+	copy(out, u.Raw.FavoritePerformerIds)
 	return out
 }
 
-func (u User) EachFollowingShow(fn func(id RadioShowId)) {
-	for _, id := range u.Raw.FavoriteProgramIds {
-		fn(RadioShowId(id))
-	}
-}
-
-// Always returns a non-nil slice copy.
-func (u User) FollowingShows() []RadioShowId {
-	out := make([]RadioShowId, 0, len(u.Raw.FavoriteProgramIds))
-
-	u.EachFollowingShow(func(id RadioShowId) {
-		out = append(out, id)
-	})
+// Returns a new copy of non-nil slice.
+func (u User) FollowingRadios() []int {
+	out := make([]int, len(u.Raw.FavoriteProgramIds))
+	copy(out, u.Raw.FavoriteProgramIds)
 	return out
 }
 
-func (u User) EachPlaylistEpisode(fn func(id EpisodeId)) {
-	for _, id := range u.Raw.PlaylistedContentIds {
-		fn(EpisodeId(id))
-	}
-}
-
-// Always returns a non-nil slice copy.
-func (u User) PlaylistEpisodes() []EpisodeId {
-	out := make([]EpisodeId, 0, len(u.Raw.PlaylistedContentIds))
-
-	u.EachPlaylistEpisode(func(id EpisodeId) {
-		out = append(out, id)
-	})
+// Returns a new copy of non-nil slice.
+func (u User) PlaylistEpisodes() []int {
+	out := make([]int, len(u.Raw.PlaylistedContentIds))
+	copy(out, u.Raw.PlaylistedContentIds)
 	return out
 }
 
-func UserFrom(s *nuxt.Signin) User {
-	if s == nil {
-		panic("Cannot be nil")
-	}
-	return User{s}
-}
-
-// Transforms nuxt.Performer
+// Transforms nuxt.Performer.
 type Person struct {
 	Raw *nuxt.Performer
 }
 
-func (p Person) PersonId() PersonId {
-	return PersonId(p.Raw.Id)
+func (p Person) Id() int {
+	return p.Raw.Id
 }
 
 func (p Person) Name() string {
 	return p.Raw.Name
 }
 
-func PersonFrom(p *nuxt.Performer) Person {
-	if p == nil {
-		panic("Cannot be nil")
+// Run the given JavaScript code for deobfuscation.
+// The code must produce a *value*, i.e. expressions.
+// Returns a string of the value's JSON representation and any JS error encountered.
+// Note that "undefined" is also considered as an error.
+func StringifyExpression(expr string) (string, error) {
+	js := fmt.Sprintf("JSON.stringify(%s)", expr)
+
+	res, err := goja.New().RunString(js)
+	if err != nil {
+		return "", err
 	}
-	return Person{p}
+
+	out := res.Export()
+	if out == nil {
+		return "", fmt.Errorf("StringifyExpression: possibly js returned an undefined")
+	}
+	return out.(string), nil
 }
 
-type EpisodeId uint
+// Returns a string to the capture of first appeared NUXT pattern:
+//   <script>window.__NUXT__=([^<]+);</script>
+func FindNuxtExpression(html string) (expr string, ok bool) {
+	re := regexp.MustCompile("<script>window.__NUXT__=([^<]+);</script>")
 
-func (id EpisodeId) String() string {
-	return strconv.FormatUint(uint64(id), 10)
+	m := re.FindStringSubmatch(html)
+	if m == nil {
+		return "", false
+	}
+	return m[1], true
 }
-
-type PersonId uint
-
-func (id PersonId) String() string {
-	return strconv.FormatUint(uint64(id), 10)
-}
-
-type RadioShowId uint
-
-func (id RadioShowId) String() string {
-	return strconv.FormatUint(uint64(id), 10)
-}
-
-type UserId string
 
 // Given a date string with no YYYY component (MM/DD) and a referenced time (usually now),
 // we find a most recent year (YYYY) such that YYYY/MM/DD won't go over the referenced time.
 func GuessTime(guess string, ref time.Time) (res time.Time, ok bool) {
 	re := regexp.MustCompile("^([0-9]{1,2})/([0-9]{1,2})$")
-	m := re.FindStringSubmatch(guess)
 
+	m := re.FindStringSubmatch(guess)
 	if m == nil {
 		return time.Time{}, false
 	}
@@ -361,72 +293,10 @@ func GuessTime(guess string, ref time.Time) (res time.Time, ok bool) {
 	}
 }
 
-// Set a zone of UTC+9 on top of GuessTime().
+// Set UTC+9 fixed time zone on top of GuessTime().
 func GuessJstTimeWithNow(guess string) (res time.Time, ok bool) {
 	loc := time.FixedZone("UTC+9", 9*60*60)
 	now := time.Now().In(loc)
 
 	return GuessTime(guess, now)
-}
-package onsen
-
-import (
-	"regexp"
-)
-
-// Returns a byte slice to the capture of first appeared NUXT pattern:
-//   <script>window.__NUXT__=([^<]+);</script>
-func FindNuxtExpression(html []byte) (expr []byte, ok bool) {
-	re := regexp.MustCompile("<script>window.__NUXT__=([^<]+);</script>")
-
-	m := re.FindSubmatch(html)
-	if m == nil {
-		return nil, false
-	}
-	return m[1], true
-}
-// Package expression is a wrapper of github.com/dop251/goja to run Javascript code (expressions) for deobfuscation.
-package expression
-
-import (
-	"fmt"
-
-	"github.com/dop251/goja"
-)
-
-type Expression struct {
-	js string
-	vm *goja.Runtime
-}
-
-// Run the given JavaScript code which can produces a *value*, i.e. expressions.
-// Returns a string of the value's JSON representation and any JS error encountered.
-// Note that "undefined" is also considered as an error.
-func (e *Expression) Stringify() (json string, err error) {
-	torun := fmt.Sprintf("JSON.stringify(%s)", string(e.js))
-
-	res, err := e.getVm().RunString(torun)
-	if err != nil {
-		return "", err
-	}
-
-	out := res.Export()
-	if out == nil {
-		return "", fmt.Errorf("Got nothing after running. Possibly the js returned an undefined.\n")
-	}
-
-	return out.(string), nil
-}
-
-func (e *Expression) getVm() *goja.Runtime {
-	if e.vm == nil {
-		e.vm = goja.New()
-	}
-	return e.vm
-}
-
-func From(js string) *Expression {
-	return &Expression{
-		js: js,
-	}
 }
