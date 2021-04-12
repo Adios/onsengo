@@ -263,3 +263,84 @@ func TestGuessTime(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, ref, g)
 }
+package expression
+
+import (
+	"fmt"
+	"testing"
+
+	"github.com/dop251/goja"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestUndefined(t *testing.T) {
+	e := From("")
+	res, err := e.Stringify()
+
+	assert.Equal(t, "", res)
+	assert.Equal(t, fmt.Errorf("Got nothing after running. Possibly the js returned an undefined.\n"), err)
+}
+
+func TestSyntaxError(t *testing.T) {
+	e := From(";")
+	res, err := e.Stringify()
+
+	assert.Equal(t, "", res)
+
+	_, ok := err.(*goja.Exception)
+	assert.True(t, ok)
+}
+
+func Example() {
+	e := From("(function(x) {return {hello: x}})('world')")
+
+	res, err := e.Stringify()
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(res)
+	// Output: {"hello":"world"}
+}
+package onsen
+
+import (
+	"fmt"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestEmptyString(t *testing.T) {
+	expr, ok := FindNuxtExpression([]byte(""))
+
+	assert.Nil(t, expr)
+	assert.False(t, ok)
+}
+
+func TextNoNuxtPattern(t *testing.T) {
+	html := []byte("...<script>window.__NUXT__=one</script><script>window.__NUXT__=two</script>...")
+	expr, ok := FindNuxtExpression(html)
+
+	assert.Nil(t, expr)
+	assert.False(t, ok)
+}
+
+func TextNuxtPattern(t *testing.T) {
+	html := []byte("...<script>window.__NUXT__=one</script><script>window.__NUXT__=two;</script>...")
+	expr, ok := FindNuxtExpression(html)
+
+	assert.Equal(t, "two", string(expr))
+	assert.True(t, ok)
+}
+
+func Example() {
+	html := []byte("...<script>window.__NUXT__=one;</script><script>window.__NUXT__=two;</script>...")
+	expr, ok := FindNuxtExpression(html)
+	if !ok {
+		panic("not found")
+	}
+
+	fmt.Println(string(expr))
+	// Output: one
+}
