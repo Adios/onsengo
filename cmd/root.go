@@ -1,29 +1,99 @@
 package cmd
 
 import (
+	"io"
+	"net/http"
+	"os"
+
 	"github.com/spf13/cobra"
+
+	"github.com/adios/onsengo/onsen"
 )
 
-var (
-	backend string
-	session string
+const ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:87.0) Gecko/20100101 Firefox/87.0 Onsengo/1.0"
 
-	rootCmd = &cobra.Command{
+var root = ctx{
+	cmd: &cobra.Command{
 		Use:   "onsengo",
-		Short: "List and download onsen.ag radio shows",
-		Long: `
-onsengo♨ is a program which allows browsing radio shows on https://onsen.ag.
-`,
-	}
-)
+		Short: "List onsen.ag radio shows",
+		Long:  "onsengo♨ is a program which allows browsing radio shows on https://onsen.ag.",
+	},
+}
 
 func Execute() error {
-	return rootCmd.Execute()
+	return root.cmd.Execute()
 }
 
 func init() {
-	fs := rootCmd.PersistentFlags()
+	pf := root.cmd.PersistentFlags()
 
-	fs.StringVar(&backend, "backend", "https://onsen.ag/", "set backend url, scheme can be file://")
-	fs.StringVarP(&session, "session", "s", "", "set session")
+	pf.StringVar(&root.backend, "backend", "https://onsen.ag/", "set backend, file:// is supported")
+	pf.StringVarP(&root.session, "session", "s", "", "set session")
+}
+
+type ctx struct {
+	backend string
+	session string
+	cmd     *cobra.Command
+
+	out io.Writer
+	err io.Writer
+
+	hc *http.Client
+	oo *onsen.Onsen
+}
+
+func (c *ctx) client() *http.Client {
+	if c.hc == nil {
+		t := &http.Transport{}
+		t.RegisterProtocol("file", http.NewFileTransport(http.Dir("/")))
+		c.hc = &http.Client{Transport: t}
+	}
+	return c.hc
+}
+
+func (c *ctx) onsen() (*onsen.Onsen, error) {
+	if c.oo == nil {
+		req, err := http.NewRequest("GET", c.backend, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Add("User-Agent", ua)
+		if c.session != "" {
+			req.Header.Add("Cookie", "_session_id="+c.session)
+		}
+
+		resp, err := c.client().Do(req)
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+
+		b, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+
+		o, err := onsen.Create(string(b))
+		if err != nil {
+			return nil, err
+		}
+		c.oo = o
+	}
+	return c.oo, nil
+}
+
+func (c *ctx) outw() io.Writer {
+	if c.out == nil {
+		c.out = os.Stdout
+	}
+	return c.out
+}
+
+func (c *ctx) errw() io.Writer {
+	if c.err == nil {
+		c.err = os.Stderr
+	}
+	return c.err
 }

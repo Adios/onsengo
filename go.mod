@@ -3,6 +3,7 @@ module github.com/adios/onsengo
 go 1.16
 
 require (
+	github.com/adios/pprint v0.1.0
 	github.com/dlclark/regexp2 v1.4.0 // indirect
 	github.com/dop251/goja v0.0.0-20210317175251-bb14c2267b76
 	github.com/go-sourcemap/sourcemap v2.1.3+incompatible // indirect

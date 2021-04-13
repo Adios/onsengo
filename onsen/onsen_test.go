@@ -228,3 +228,49 @@ func TestNuxtWithPremiumUser(t *testing.T) {
 		assert.Equal("HAS_BEEN_SCREENED", m)
 	}
 }
+
+func TestCreate(t *testing.T) {
+	assert := assert.New(t)
+	{
+		o, err := Create("")
+		assert.Error(err)
+		assert.Nil(o)
+	}
+	{
+		o, err := Create("...<script>window.__NUXT__=one</script><script>window.__NUXT__=two;</script>...")
+		assert.Error(err)
+		assert.Nil(o)
+	}
+}
+
+func TestOnsenRadio(t *testing.T) {
+	var (
+		assert = assert.New(t)
+		f, _   = os.ReadFile("testdata/fixture_nologin_screened.html")
+	)
+
+	{
+		o, _ := Create(string(f))
+		r, ok := o.Radio(nil)
+		assert.False(ok)
+		assert.Equal(r, Radio{})
+	}
+	{
+		o, _ := Create(string(f))
+		assert.Nil(o.cache)
+		r, ok := o.Radio(139)
+		assert.True(ok)
+		assert.Equal(o.Radios()[59], r)
+		assert.NotNil(o.cache)
+	}
+	{
+		o, _ := Create(string(f))
+		assert.Nil(o.cache)
+		a, ok := o.Radio("kamisama-day")
+		assert.True(ok)
+		assert.Equal(o.Radios()[59], a)
+		assert.NotNil(o.cache)
+		b, _ := o.Radio("kamisama-day")
+		assert.Equal(b, a)
+	}
+}
