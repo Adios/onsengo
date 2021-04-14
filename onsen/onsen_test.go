@@ -1,7 +1,6 @@
 package onsen
 
 import (
-	"bytes"
 	"os"
 	"testing"
 	"time"
@@ -10,6 +9,11 @@ import (
 
 	"github.com/adios/onsengo/onsen/nuxt"
 )
+
+func TestMain(m *testing.M) {
+	SetRefDate("2021-03-21")
+	os.Exit(m.Run())
+}
 
 func TestStringifyExpression(t *testing.T) {
 	assert := assert.New(t)
@@ -74,11 +78,35 @@ func TestGuessTime(t *testing.T) {
 	}
 }
 
+func TestGuessJstTimeWithNow(t *testing.T) {
+	mem := guessRefTime
+	defer func() { guessRefTime = mem }()
+
+	{
+		SetRefDate("2021-03-24")
+		tm, ok := GuessJstTimeWithNow("3/25")
+		assert.True(t, ok)
+		assert.Equal(t, "2020-03-25 00:00:00 +0900 UTC+9", tm.String())
+	}
+	{
+		SetRefDate("2020-03-26")
+		tm, ok := GuessJstTimeWithNow("3/25")
+		assert.True(t, ok)
+		assert.Equal(t, "2020-03-25 00:00:00 +0900 UTC+9", tm.String())
+	}
+	{
+		SetRefDate("2019-03-24")
+		tm, ok := GuessJstTimeWithNow("3/25")
+		assert.True(t, ok)
+		assert.Equal(t, "2018-03-25 00:00:00 +0900 UTC+9", tm.String())
+	}
+}
+
 func TestNuxtWithAnonymousUser(t *testing.T) {
 	var (
 		assert = assert.New(t)
 		f, _   = os.ReadFile("testdata/fixture_nologin_screened.json")
-		str, _ = nuxt.Create(bytes.NewReader(f))
+		str, _ = nuxt.Create(string(f))
 		n      = Nuxt{str}
 	)
 
@@ -137,25 +165,14 @@ func TestNuxtWithAnonymousUser(t *testing.T) {
 	{
 		// Radio time
 		at, ok := k.JstUpdatedAt()
-		name, offset := at.Zone()
-
 		assert.True(ok)
-		// year is variant
-		assert.Equal(time.Month(3), at.Month())
-		assert.Equal(19, at.Day())
-		assert.Equal("UTC+9", name)
-		assert.Equal(9*60*60, offset)
+		assert.Equal("2021-03-19 00:00:00 +0900 UTC+9", at.String())
 	}
 	{
-
 		// Episode time
 		at, ok := k.Episodes()[6].JstUpdatedAt()
-		name, offset := at.Zone()
 		assert.True(ok)
-		assert.Equal(time.Month(2), at.Month())
-		assert.Equal(5, at.Day())
-		assert.Equal("UTC+9", name)
-		assert.Equal(9*60*60, offset)
+		assert.Equal("2021-02-05 00:00:00 +0900 UTC+9", at.String())
 	}
 	{
 		// 100man: no radio time, but contains episodes, use episode's time
@@ -187,7 +204,7 @@ func TestNuxtWithPremiumUser(t *testing.T) {
 	var (
 		assert = assert.New(t)
 		f, _   = os.ReadFile("testdata/fixture_paid_screened.json")
-		str, _ = nuxt.Create(bytes.NewReader(f))
+		str, _ = nuxt.Create(string(f))
 		n      = Nuxt{str}
 	)
 
@@ -227,5 +244,51 @@ func TestNuxtWithPremiumUser(t *testing.T) {
 		m, ok := n.Radios()[17].Episodes()[0].Manifest()
 		assert.True(ok)
 		assert.Equal("HAS_BEEN_SCREENED", m)
+	}
+}
+
+func TestCreate(t *testing.T) {
+	assert := assert.New(t)
+	{
+		o, err := Create("")
+		assert.Error(err)
+		assert.Nil(o)
+	}
+	{
+		o, err := Create("...<script>window.__NUXT__=one</script><script>window.__NUXT__=two;</script>...")
+		assert.Error(err)
+		assert.Nil(o)
+	}
+}
+
+func TestOnsenRadio(t *testing.T) {
+	var (
+		assert = assert.New(t)
+		f, _   = os.ReadFile("testdata/fixture_nologin_screened.html")
+	)
+
+	{
+		o, _ := Create(string(f))
+		r, ok := o.Radio(nil)
+		assert.False(ok)
+		assert.Equal(r, Radio{})
+	}
+	{
+		o, _ := Create(string(f))
+		assert.Nil(o.cache)
+		r, ok := o.Radio(139)
+		assert.True(ok)
+		assert.Equal(o.Radios()[59], r)
+		assert.NotNil(o.cache)
+	}
+	{
+		o, _ := Create(string(f))
+		assert.Nil(o.cache)
+		a, ok := o.Radio("kamisama-day")
+		assert.True(ok)
+		assert.Equal(o.Radios()[59], a)
+		assert.NotNil(o.cache)
+		b, _ := o.Radio("kamisama-day")
+		assert.Equal(b, a)
 	}
 }

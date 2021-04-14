@@ -3,7 +3,6 @@ package nuxt
 import (
 	"fmt"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,17 +12,17 @@ func TestCreate(t *testing.T) {
 	assert := assert.New(t)
 
 	{
-		n, err := Create(strings.NewReader(""))
+		n, err := Create("")
 		assert.Nil(n)
 		assert.EqualError(err, "EOF", "Empty string causes error")
 	}
 	{
-		n, err := Create(strings.NewReader("{\"ok\":\"}"))
+		n, err := Create("{\"ok\":\"}")
 		assert.Nil(n)
 		assert.EqualError(err, "unexpected EOF", "Invalid JSON causes error")
 	}
 	{
-		n, err := Create(strings.NewReader("{}"))
+		n, err := Create("{}")
 		assert.NoError(err)
 		assert.Equal([]Program(nil), n.State.Programs.Programs.All, "Empty JSON creates entire valid structs")
 	}
@@ -36,7 +35,7 @@ func TestCreateWithAnonymousUser(t *testing.T) {
 	)
 	defer f.Close()
 
-	n, err := Create(f)
+	n, err := CreateFromReader(f)
 	assert.NoError(err)
 	assert.Nil(n.State.Signin, "Anonymous user doesn't have signin value")
 
@@ -93,7 +92,7 @@ func TestCreateWithLogined(t *testing.T) {
 	)
 	defer f.Close()
 
-	n, err := Create(f)
+	n, err := CreateFromReader(f)
 	assert.NoError(err)
 	assert.NotNil(n.State.Signin, "Logined user have signin value")
 
@@ -126,7 +125,7 @@ func Example() {
 	}
 	defer f.Close()
 
-	n, err := Create(f)
+	n, err := CreateFromReader(f)
 	if err != nil {
 		panic(err)
 	}

@@ -1,4 +1,23 @@
-// Package onsen embeds a Nuxt decorator acting as a front-end to clients
+// Package onsen implements a parser and a wrapper for https://onsen.ag/.
+//
+// SIDE EFFECT:
+//
+// The following function and methods have side effects:
+//
+//    Radio.JstUpdatedAt()
+//    Episode.JstUpdatedAt()
+//    GuessJstTimeWithNow()
+//
+// Their outputs depend on time.Now(). (its year)
+//
+// Set a fixed time if need to test thier output values:
+//
+//     // any date is OK as long as it fits the data getting test.
+//     onsen.SetRefDate("2021-03-21")
+//
+// In raw json, the upload date of all radio shows is in a string of MM/DD format,
+// in order to build a complete timestamp for the date, they must do a guess to find a possible YYYY.
+// By calling SetRefDate(), it sets a fixed date to guess intead of time.Now().
 package onsen
 
 import (
@@ -7,10 +26,75 @@ import (
 	"strconv"
 	"time"
 
+	// Deobfuscation javascript nuxt object
 	"github.com/dop251/goja"
 
+	// Parse nuxt json
 	"github.com/adios/onsengo/onsen/nuxt"
 )
+
+// Set this to a fixed time to test GuessJstTimeWithNow() and JstUpdatedAt().
+var guessRefTime = time.Now()
+
+// This function panics if it cannot parse the date string. date is a string in "YYYY-MM-DD" format.
+func SetRefDate(date string) {
+	tm, err := time.Parse("2006-01-02", date)
+	if err != nil {
+		panic(err)
+	}
+	guessRefTime = tm
+}
+
+type index map[interface{}]Radio
+
+type Onsen struct {
+	// Decorator for onsen's data
+	Nuxt
+	// Radio cache
+	cache index
+}
+
+// Returns a Radio if found, otherwise ok is set to false. Input can be either a radio id or a radio name.
+// The method creates a cache for all radios when it is invoked for first time.
+func (o *Onsen) Radio(id interface{}) (r Radio, ok bool) {
+	r, ok = o.Index()[id]
+	return
+}
+
+// Implements a simple radio cache. We index Radio by its name and id. It's for faster radio retrieving.
+func (o *Onsen) Index() index {
+	if o.cache == nil {
+		c := make(index)
+		o.EachRadio(func(r Radio) {
+			c[r.Id()] = r
+			c[r.Name()] = r
+		})
+		o.cache = c
+	}
+	return o.cache
+}
+
+// Given an index.html content, returns an Onsen instance for it.
+func Create(html string) (*Onsen, error) {
+	expr, ok := FindNuxtExpression(html)
+	if !ok {
+		return nil, fmt.Errorf("Create: NUXT pattern not matched")
+	}
+
+	str, err := StringifyExpression(expr)
+	if err != nil {
+		return nil, err
+	}
+
+	n, err := nuxt.Create(str)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Onsen{
+		Nuxt: Nuxt{n},
+	}, nil
+}
 
 // Transforms nuxt.Nuxt.
 type Nuxt struct {
@@ -69,9 +153,10 @@ func (r Radio) HasBeenUpdated() bool {
 	return r.Raw.New
 }
 
-// Returns the time in which its year component (YYYY) is never after now year.
-// It's doing so because onsen.ag gives the value without a year component, i.e. only "MM/DD".
-// We have to guess the YYYY by ourself in order to make this field useful.
+// SIDE EFFECT: this method has side effect, set a fixed year by SetRefDate() when testing its value.
+//
+// If a show is updated on "3/19", the method returns a time with its date set on either "2021/03/19" or "2020/03/19",
+// depends on time.Now(). Since there is no year component given in the raw output from onsen.ag.
 //
 // If the raw value isn't in MM/DD format, an time.Time{} will be returned.
 //
@@ -141,9 +226,10 @@ func (e Episode) Manifest() (url string, ok bool) {
 	return *str, true
 }
 
-// Returns the time in which its year component (YYYY) is never after now year.
-// It's doing so because onsen.ag gives the value without a year component, i.e. only "MM/DD".
-// We have to guess the YYYY by ourself in order to make this field useful.
+// SIDE EFFECT: this method has side effect, set a fixed year by SetRefDate() when testing its value.
+//
+// If a show is updated on "3/19", the method returns a time with its date set on either "2021/03/19" or "2020/03/19",
+// depends on time.Now(). Since there is no year component given in the raw output from onsen.ag.
 //
 // If the raw value isn't in MM/DD format, an time.Time{} will be returned.
 //
@@ -260,7 +346,7 @@ func FindNuxtExpression(html string) (expr string, ok bool) {
 	return m[1], true
 }
 
-// Given a date string with no YYYY component (MM/DD) and a referenced time (usually now),
+// Given a date string with no YYYY component (MM/DD) and a referenced time,
 // we find a most recent year (YYYY) such that YYYY/MM/DD won't go over the referenced time.
 func GuessTime(guess string, ref time.Time) (res time.Time, ok bool) {
 	re := regexp.MustCompile("^([0-9]{1,2})/([0-9]{1,2})$")
@@ -293,10 +379,12 @@ func GuessTime(guess string, ref time.Time) (res time.Time, ok bool) {
 	}
 }
 
+// SIDE EFFECT: this method has side effect, set a fixed year by SetRefDate() when testing its value.
+//
 // Set UTC+9 fixed time zone on top of GuessTime().
 func GuessJstTimeWithNow(guess string) (res time.Time, ok bool) {
 	loc := time.FixedZone("UTC+9", 9*60*60)
-	now := time.Now().In(loc)
+	ref := guessRefTime.In(loc)
 
-	return GuessTime(guess, now)
+	return GuessTime(guess, ref)
 }
