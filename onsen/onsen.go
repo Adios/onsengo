@@ -1,4 +1,23 @@
-// Package onsen embeds a Nuxt decorator acting as a front-end to clients
+// Package onsen embeds a Nuxt decorator acting as a front-end to clients.
+//
+// SIDE EFFECT:
+//
+// The following function and methods have side effects:
+//
+//    Radio.JstUpdatedAt()
+//    Episode.JstUpdatedAt()
+//    GuessJstTimeWithNow()
+//
+// Their outputs depend on time.Now().
+//
+// Set a fixed time if need to test thier output values:
+//
+//     // any fixed date is OK as long as it fits the data getting test.
+//     onsen.SetRefDate("2021-03-21")
+//
+// In raw json, the upload date of all radio shows is in a string of MM/DD format,
+// in order to build a complete timestamp for the date, they must do a guess to find a possible YYYY.
+// By calling SetRefDate(), it sets a fixed date to guess intead of time.Now().
 package onsen
 
 import (
@@ -11,6 +30,17 @@ import (
 
 	"github.com/adios/onsengo/onsen/nuxt"
 )
+
+// Set this to a fixed time to test GuessJstTimeWithNow() and JstUpdatedAt().
+var guessRefTime = time.Now()
+
+func SetRefDate(date string) {
+	tm, err := time.Parse("2006-01-02", date)
+	if err != nil {
+		panic(err)
+	}
+	guessRefTime = tm
+}
 
 type index map[interface{}]Radio
 
@@ -114,9 +144,10 @@ func (r Radio) HasBeenUpdated() bool {
 	return r.Raw.New
 }
 
-// Returns the time in which its year component (YYYY) is never after now year.
-// It's doing so because onsen.ag gives the value without a year component, i.e. only "MM/DD".
-// We have to guess the YYYY by ourself in order to make this field useful.
+// SIDE EFFECT: this method has side effect, set a fixed year by SetRefDate() when testing its value.
+//
+// If a show is updated on "3/19", the method returns a time with its date set on either "2021/03/19" or "2020/03/19",
+// depends on time.Now(). Since there is no year component given in the raw output from onsen.ag.
 //
 // If the raw value isn't in MM/DD format, an time.Time{} will be returned.
 //
@@ -186,9 +217,10 @@ func (e Episode) Manifest() (url string, ok bool) {
 	return *str, true
 }
 
-// Returns the time in which its year component (YYYY) is never after now year.
-// It's doing so because onsen.ag gives the value without a year component, i.e. only "MM/DD".
-// We have to guess the YYYY by ourself in order to make this field useful.
+// SIDE EFFECT: this method has side effect, set a fixed year by SetRefDate() when testing its value.
+//
+// If a show is updated on "3/19", the method returns a time with its date set on either "2021/03/19" or "2020/03/19",
+// depends on time.Now(). Since there is no year component given in the raw output from onsen.ag.
 //
 // If the raw value isn't in MM/DD format, an time.Time{} will be returned.
 //
@@ -305,7 +337,7 @@ func FindNuxtExpression(html string) (expr string, ok bool) {
 	return m[1], true
 }
 
-// Given a date string with no YYYY component (MM/DD) and a referenced time (usually now),
+// Given a date string with no YYYY component (MM/DD) and a referenced time,
 // we find a most recent year (YYYY) such that YYYY/MM/DD won't go over the referenced time.
 func GuessTime(guess string, ref time.Time) (res time.Time, ok bool) {
 	re := regexp.MustCompile("^([0-9]{1,2})/([0-9]{1,2})$")
@@ -338,10 +370,12 @@ func GuessTime(guess string, ref time.Time) (res time.Time, ok bool) {
 	}
 }
 
+// SIDE EFFECT: this method has side effect, set a fixed year by SetRefDate() when testing its value.
+//
 // Set UTC+9 fixed time zone on top of GuessTime().
 func GuessJstTimeWithNow(guess string) (res time.Time, ok bool) {
 	loc := time.FixedZone("UTC+9", 9*60*60)
-	now := time.Now().In(loc)
+	ref := guessRefTime.In(loc)
 
-	return GuessTime(guess, now)
+	return GuessTime(guess, ref)
 }

@@ -10,6 +10,11 @@ import (
 	"github.com/adios/onsengo/onsen/nuxt"
 )
 
+func TestMain(m *testing.M) {
+	SetRefDate("2021-03-21")
+	os.Exit(m.Run())
+}
+
 func TestStringifyExpression(t *testing.T) {
 	assert := assert.New(t)
 
@@ -70,6 +75,30 @@ func TestGuessTime(t *testing.T) {
 		out, ok := GuessTime(test.in, ref)
 		assert.Equal(t, test.out, out)
 		assert.Equal(t, test.ok, ok)
+	}
+}
+
+func TestGuessJstTimeWithNow(t *testing.T) {
+	mem := guessRefTime
+	defer func() { guessRefTime = mem }()
+
+	{
+		SetRefDate("2021-03-24")
+		tm, ok := GuessJstTimeWithNow("3/25")
+		assert.True(t, ok)
+		assert.Equal(t, "2020-03-25 00:00:00 +0900 UTC+9", tm.String())
+	}
+	{
+		SetRefDate("2020-03-26")
+		tm, ok := GuessJstTimeWithNow("3/25")
+		assert.True(t, ok)
+		assert.Equal(t, "2020-03-25 00:00:00 +0900 UTC+9", tm.String())
+	}
+	{
+		SetRefDate("2019-03-24")
+		tm, ok := GuessJstTimeWithNow("3/25")
+		assert.True(t, ok)
+		assert.Equal(t, "2018-03-25 00:00:00 +0900 UTC+9", tm.String())
 	}
 }
 
@@ -136,25 +165,14 @@ func TestNuxtWithAnonymousUser(t *testing.T) {
 	{
 		// Radio time
 		at, ok := k.JstUpdatedAt()
-		name, offset := at.Zone()
-
 		assert.True(ok)
-		// year is variant
-		assert.Equal(time.Month(3), at.Month())
-		assert.Equal(19, at.Day())
-		assert.Equal("UTC+9", name)
-		assert.Equal(9*60*60, offset)
+		assert.Equal("2021-03-19 00:00:00 +0900 UTC+9", at.String())
 	}
 	{
-
 		// Episode time
 		at, ok := k.Episodes()[6].JstUpdatedAt()
-		name, offset := at.Zone()
 		assert.True(ok)
-		assert.Equal(time.Month(2), at.Month())
-		assert.Equal(5, at.Day())
-		assert.Equal("UTC+9", name)
-		assert.Equal(9*60*60, offset)
+		assert.Equal("2021-02-05 00:00:00 +0900 UTC+9", at.String())
 	}
 	{
 		// 100man: no radio time, but contains episodes, use episode's time
