@@ -1,4 +1,4 @@
-// Package onsen embeds a Nuxt decorator acting as a front-end to clients.
+// Package onsen implements a parser and a wrapper for https://onsen.ag/.
 //
 // SIDE EFFECT:
 //
@@ -8,11 +8,11 @@
 //    Episode.JstUpdatedAt()
 //    GuessJstTimeWithNow()
 //
-// Their outputs depend on time.Now().
+// Their outputs depend on time.Now(). (its year)
 //
 // Set a fixed time if need to test thier output values:
 //
-//     // any fixed date is OK as long as it fits the data getting test.
+//     // any date is OK as long as it fits the data getting test.
 //     onsen.SetRefDate("2021-03-21")
 //
 // In raw json, the upload date of all radio shows is in a string of MM/DD format,
@@ -26,14 +26,17 @@ import (
 	"strconv"
 	"time"
 
+	// Deobfuscation javascript nuxt object
 	"github.com/dop251/goja"
 
+	// Parse nuxt json
 	"github.com/adios/onsengo/onsen/nuxt"
 )
 
 // Set this to a fixed time to test GuessJstTimeWithNow() and JstUpdatedAt().
 var guessRefTime = time.Now()
 
+// This function panics if it cannot parse the date string. date is a string in "YYYY-MM-DD" format.
 func SetRefDate(date string) {
 	tm, err := time.Parse("2006-01-02", date)
 	if err != nil {
@@ -45,15 +48,20 @@ func SetRefDate(date string) {
 type index map[interface{}]Radio
 
 type Onsen struct {
+	// Decorator for onsen's data
 	Nuxt
+	// Radio cache
 	cache index
 }
 
+// Returns a Radio if found, otherwise ok is set to false. Input can be either a radio id or a radio name.
+// The method creates a cache for all radios when it is invoked for first time.
 func (o *Onsen) Radio(id interface{}) (r Radio, ok bool) {
 	r, ok = o.Index()[id]
 	return
 }
 
+// Implements a simple radio cache. We index Radio by its name and id. It's for faster radio retrieving.
 func (o *Onsen) Index() index {
 	if o.cache == nil {
 		c := make(index)
@@ -66,6 +74,7 @@ func (o *Onsen) Index() index {
 	return o.cache
 }
 
+// Given an index.html content, returns an Onsen instance for it.
 func Create(html string) (*Onsen, error) {
 	expr, ok := FindNuxtExpression(html)
 	if !ok {

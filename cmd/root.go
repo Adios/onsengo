@@ -1,3 +1,4 @@
+// Package cmd implements the onsengo command.
 package cmd
 
 import (
@@ -10,13 +11,15 @@ import (
 	"github.com/adios/onsengo/onsen"
 )
 
-const ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:87.0) Gecko/20100101 Firefox/87.0 Onsengo/1.0"
+const ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:87.0) Gecko/20100101 Onsengo/1.0"
 
 var root = ctx{
 	cmd: &cobra.Command{
 		Use:   "onsengo",
-		Short: "List onsen.ag radio shows",
-		Long:  "onsengo♨ is a program which allows browsing radio shows on https://onsen.ag.",
+		Short: "List and browse onsen.ag radio shows",
+		Long: `
+onsengo♨ is a program which allows browsing radio shows on https://onsen.ag.
+`,
 	},
 }
 
@@ -32,13 +35,17 @@ func init() {
 }
 
 type ctx struct {
+	// To test or interpret an archived html, e.g.: file:///full/path/to/the/onsen/index.html
 	backend string
+	// You can find the id from "_session_id=SESSION_ID" in the browser's cookie.
 	session string
 	cmd     *cobra.Command
 
+	// for onsen/pprint output
 	out io.Writer
 	err io.Writer
 
+	// for onsen
 	hc *http.Client
 	oo *onsen.Onsen
 }
@@ -46,6 +53,7 @@ type ctx struct {
 func (c *ctx) client() *http.Client {
 	if c.hc == nil {
 		t := &http.Transport{}
+		// for file://
 		t.RegisterProtocol("file", http.NewFileTransport(http.Dir("/")))
 		c.hc = &http.Client{Transport: t}
 	}
