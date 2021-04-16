@@ -275,20 +275,44 @@ func TestOnsenRadio(t *testing.T) {
 	}
 	{
 		o, _ := Create(string(f))
-		assert.Nil(o.cache)
+		assert.Nil(o.cache.r)
 		r, ok := o.Radio(139)
 		assert.True(ok)
 		assert.Equal(o.Radios()[59], r)
-		assert.NotNil(o.cache)
+		assert.NotNil(o.cache.r)
 	}
 	{
 		o, _ := Create(string(f))
-		assert.Nil(o.cache)
+		assert.Nil(o.cache.r)
 		a, ok := o.Radio("kamisama-day")
 		assert.True(ok)
 		assert.Equal(o.Radios()[59], a)
-		assert.NotNil(o.cache)
+		assert.NotNil(o.cache.r)
 		b, _ := o.Radio("kamisama-day")
 		assert.Equal(b, a)
+	}
+}
+
+func TestOnsenEpisode(t *testing.T) {
+	var (
+		assert = assert.New(t)
+		f, _   = os.ReadFile("testdata/fixture_nologin_screened.html")
+	)
+
+	{
+		o, _ := Create(string(f))
+		assert.Nil(o.cache.e)
+		r, ok := o.Episode(-1)
+		assert.False(ok)
+		assert.Equal(r, Episode{})
+		assert.NotNil(o.cache.e)
+	}
+	{
+		o, _ := Create(string(f))
+		assert.Nil(o.cache.e)
+		e, ok := o.Episode(3510)
+		assert.True(ok)
+		assert.Equal(o.Radios()[59].Episodes()[0], e)
+		assert.NotNil(o.cache.e)
 	}
 }

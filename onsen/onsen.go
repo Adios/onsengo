@@ -45,33 +45,60 @@ func SetRefDate(date string) {
 	guessRefTime = tm
 }
 
-type index map[interface{}]Radio
+type RadioIndex map[interface{}]Radio
+type EpisodeIndex map[int]Episode
 
 type Onsen struct {
 	// Decorator for onsen's data
 	Nuxt
-	// Radio cache
-	cache index
+	// Radio & episode cache
+	cache struct {
+		r RadioIndex
+		e EpisodeIndex
+	}
 }
 
 // Returns a Radio if found, otherwise ok is set to false. Input can be either a radio id or a radio name.
 // The method creates a cache for all radios when it is invoked for first time.
 func (o *Onsen) Radio(id interface{}) (r Radio, ok bool) {
-	r, ok = o.Index()[id]
+	r, ok = o.RadioIndex()[id]
 	return
 }
 
-// Implements a simple radio cache. We index Radio by its name and id. It's for faster radio retrieving.
-func (o *Onsen) Index() index {
-	if o.cache == nil {
-		c := make(index)
+// Implements a simple radio cache. We index Radio by its name and id.
+func (o *Onsen) RadioIndex() RadioIndex {
+	if o.cache.r == nil {
+		c := make(RadioIndex)
 		o.EachRadio(func(r Radio) {
 			c[r.Id()] = r
 			c[r.Name()] = r
 		})
-		o.cache = c
+		o.cache.r = c
 	}
-	return o.cache
+	return o.cache.r
+}
+
+// Returns an Episode if found, otherwise ok is set to false.
+// The method creates a cache for all episodes when it is invoked for first time.
+func (o *Onsen) Episode(id int) (e Episode, ok bool) {
+	e, ok = o.EpisodeIndex()[id]
+	return
+}
+
+// Implements a simple episode cache by its id.
+//
+// As of April 17, 2021, there are only 716 episodes on the webside, should be reasonable to fit into a small map.
+func (o *Onsen) EpisodeIndex() EpisodeIndex {
+	if o.cache.e == nil {
+		c := make(EpisodeIndex)
+		o.EachRadio(func(r Radio) {
+			for _, e := range r.Episodes() {
+				c[e.Id()] = e
+			}
+		})
+		o.cache.e = c
+	}
+	return o.cache.e
 }
 
 // Given an index.html content, returns an Onsen instance for it.
