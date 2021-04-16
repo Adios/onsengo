@@ -90,6 +90,23 @@ func Test(t *testing.T) {
 		assert.Equal(string(f), out.String())
 		assert.Equal("nosuchradio: not found\n", err.String())
 	}, "ls", "fujita", "gurepap", "nosuchradio", "fujita", "gurepap", "--backend", server.URL)
+
+	execute(func(out b, err b) {
+		assert.NoError(Execute())
+		assert.Equal(strings.Repeat("HAS_BEEN_SCREENED\n", 121), out.String())
+	}, "lsm", "--backend", server.URL)
+
+	execute(func(out b, err b) {
+		assert.NoError(Execute())
+		assert.Equal(strings.Repeat("HAS_BEEN_SCREENED\n", 2), out.String())
+		assert.Equal("nosuchradio: not found\n", err.String())
+	}, "lsm", "fujita", "gurepap", "nosuchradio", "--backend", server.URL)
+
+	execute(func(out b, err b) {
+		assert.NoError(Execute())
+		assert.Equal("HAS_BEEN_SCREENED\n", out.String())
+		assert.Equal("fujita/3560: empty manifest, may be inaccessible\nfujita/9999: not found\n", err.String())
+	}, "lsm", "fujita/3598", "fujita/3560", "fujita/9999", "--backend", server.URL)
 }
 
 func server(t *testing.T) http.Handler {
