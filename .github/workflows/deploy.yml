@@ -1,0 +1,36 @@
+name: Deploy when getting release tag
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+
+  deploy-github:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.16
+
+    - name: Test
+      run: go test -v ./...
+
+    - name: Cross build
+      run: make -j4 cross-build
+
+    - name: Bindist
+      run: make -j4 bindist
+
+    - name: Deploy
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          build/*.zst
+          build/*.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
