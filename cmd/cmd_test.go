@@ -22,6 +22,25 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+func TestUnique(t *testing.T) {
+	type s = []string
+
+	tests := []struct {
+		in       s
+		expected s
+	}{
+		{s{}, s{}},
+		{s{"a"}, s{"a"}},
+		{s{"a", "a"}, s{"a"}},
+		{s{"a", "b"}, s{"a", "b"}},
+		{s{"a", "b", "a", "b", "c"}, s{"a", "b", "c"}},
+	}
+
+	for _, test := range tests {
+		assert.Equal(t, test.expected, unique(test.in))
+	}
+}
+
 func Test(t *testing.T) {
 	type b = *strings.Builder
 
@@ -64,6 +83,13 @@ func Test(t *testing.T) {
 		assert.Equal(string(f), out.String())
 		assert.Equal("nosuchradio: not found\n", err.String())
 	}, "ls", "fujita", "gurepap", "nosuchradio", "--backend", server.URL)
+
+	execute(func(out b, err b) {
+		f, _ := os.ReadFile("testdata/expected_ls_single.txt")
+		assert.NoError(Execute())
+		assert.Equal(string(f), out.String())
+		assert.Equal("nosuchradio: not found\n", err.String())
+	}, "ls", "fujita", "gurepap", "nosuchradio", "fujita", "gurepap", "--backend", server.URL)
 }
 
 func server(t *testing.T) http.Handler {

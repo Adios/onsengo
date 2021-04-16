@@ -57,7 +57,7 @@ func runLs(cmd *cobra.Command, args []string) error {
 			o.EachRadio(func(r onsen.Radio) { addRadio(out, r) })
 		}
 	case n > 0:
-		for _, arg := range args {
+		for _, arg := range unique(args) {
 			r, ok := o.Radio(arg)
 			if !ok {
 				fmt.Fprintf(root.errw(), "%s: not found\n", arg)
@@ -199,4 +199,31 @@ func setupLs() {
 		},
 	}
 
+}
+
+// Stable unique.
+func unique(s []string) []string {
+	var out []string
+
+	switch n := len(s); {
+	case n < 2:
+		out = s
+	case n == 2:
+		if s[0] == s[1] {
+			out = s[0:1]
+		} else {
+			out = s
+		}
+	default:
+		out = make([]string, 0, n)
+
+		bucket := make(map[string]bool)
+		for _, key := range s {
+			if bucket[key] == false {
+				bucket[key] = true
+				out = append(out, key)
+			}
+		}
+	}
+	return out
 }
