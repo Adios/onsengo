@@ -41,7 +41,7 @@ type ctx struct {
 	session string
 	cmd     *cobra.Command
 
-	// for onsen/pprint output
+	// for testing onsen/pprint/fprintf output
 	out io.Writer
 	err io.Writer
 
@@ -60,30 +60,45 @@ func (c *ctx) client() *http.Client {
 	return c.hc
 }
 
+func (c *ctx) request() (*http.Response, error) {
+	req, err := http.NewRequest("GET", c.backend, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("User-Agent", ua)
+	if c.session != "" {
+		req.Header.Add("Cookie", "_session_id="+c.session)
+	}
+
+	resp, err := c.client().Do(req)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (c *ctx) html() (string, error) {
+	resp, err := c.request()
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}
+
 func (c *ctx) onsen() (*onsen.Onsen, error) {
 	if c.oo == nil {
-		req, err := http.NewRequest("GET", c.backend, nil)
+		html, err := c.html()
 		if err != nil {
 			return nil, err
 		}
-
-		req.Header.Add("User-Agent", ua)
-		if c.session != "" {
-			req.Header.Add("Cookie", "_session_id="+c.session)
-		}
-
-		resp, err := c.client().Do(req)
-		if err != nil {
-			return nil, err
-		}
-		defer resp.Body.Close()
-
-		b, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, err
-		}
-
-		o, err := onsen.Create(string(b))
+		o, err := onsen.Create(html)
 		if err != nil {
 			return nil, err
 		}

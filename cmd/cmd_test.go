@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"compress/bzip2"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -107,6 +109,17 @@ func Test(t *testing.T) {
 		assert.Equal("HAS_BEEN_SCREENED\n", out.String())
 		assert.Equal("fujita/3560: empty manifest, may be inaccessible\nfujita/9999: not found\n", err.String())
 	}, "lsm", "fujita/3598", "fujita/3560", "fujita/9999", "--backend", server.URL)
+
+	execute(func(out b, err b) {
+		var (
+			f, _    = os.Open("testdata/expected_dump.txt.bz2")
+			r       = bzip2.NewReader(f)
+			data, _ = io.ReadAll(r)
+		)
+
+		assert.NoError(Execute())
+		assert.Equal(string(data), out.String())
+	}, "dump", "--backend", server.URL)
 }
 
 func server(t *testing.T) http.Handler {

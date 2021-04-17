@@ -101,19 +101,13 @@ func (o *Onsen) EpisodeIndex() EpisodeIndex {
 	return o.cache.e
 }
 
-// Given an index.html content, returns an Onsen instance for it.
+// Takes a string of an index.html content from onsen.ag, returns an Onsen instance and any error encountered.
 func Create(html string) (*Onsen, error) {
-	expr, ok := FindNuxtExpression(html)
-	if !ok {
-		return nil, fmt.Errorf("Create: NUXT pattern not matched")
-	}
-
-	str, err := StringifyExpression(expr)
+	raw, err := RawData(html)
 	if err != nil {
 		return nil, err
 	}
-
-	n, err := nuxt.Create(str)
+	n, err := nuxt.Create(raw)
 	if err != nil {
 		return nil, err
 	}
@@ -121,6 +115,21 @@ func Create(html string) (*Onsen, error) {
 	return &Onsen{
 		Nuxt: Nuxt{n},
 	}, nil
+}
+
+// Takes a string of an index.html content from onsen.ag, returns the raw data in a JSON string and any error
+// encountered.
+func RawData(html string) (string, error) {
+	expr, ok := FindNuxtExpression(html)
+	if !ok {
+		return "", fmt.Errorf("Create: NUXT pattern not matched")
+	}
+
+	str, err := StringifyExpression(expr)
+	if err != nil {
+		return "", err
+	}
+	return str, nil
 }
 
 // Transforms nuxt.Nuxt.
