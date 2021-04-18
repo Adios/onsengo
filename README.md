@@ -12,27 +12,13 @@ we could get all the data with only one fetch. So the concept is easy:
 3. Parses data and creates a decorator to manipulate with.
 4. Cmd is implemented with [spf13/cobra](https://github.com/spf13/cobra), and [adios/pprint](https://github.com/adios/pprint) handles boilerplate typesetting.
 
-**onsengo**♨ currently supports the following commands:
+**onsengo**♨ currently implements the following commands:
 
 * `onsengo ls`
+* `onsengo lsm`
+* `onsengo dump`
 
-## Global options
-
-`--backend`: set a custom website url. If you have previously index.html archives, you can provide it like this:
-```
-onsengo ls --backend file:///full/path/to/index.html
-```
-`--session`: if you are a premium user, you could provide a **session** to the command:
-```
-onsengo ls --session SESSION_STRING_KEEP_IT_SECURE
-```
-A session string can be found in the cookie when you get logged-in and starts browsing onsen.ag.
-- Open a browser (Firefox as an example) to https://onsen.ag/, make sure you are logged in.
-- Open developer tool, reload the page
-- In the network tab, copy the first request to onsen.ag with "copy as cURL"
-- From the copied string, match the pattern `_session_id=SESSION_STRING_KEEP_IT_SECURE` without the `_session_id=` prefix.
-
-## onsengo ls
+## `onsengo ls`
 
 `onsengo ls` can list radio shows and episodes on onsen.ag. Execute without arguments gives you all the radio programs the website current has:
 
@@ -93,3 +79,66 @@ d--*-- 4 Apr 13 2021 toshitai      セブン-イレブン presents 佐倉とし�
   - `+`: extra content (sometimes extra is main content)
   - `$`: paid content
 - For radios, output is sort by upload date. (no perform sorting on episodes)
+
+## `onsengo lsm`
+
+`onsengo lsm` can list each episode's manifest. By default, it lists all the manifests which are **accessible by current session**.
+
+You can narrow down the result by specifying particular radio shows or episodes obtained from `onsengo ls`:
+
+```
+~/w/onsengo ❯❯❯ onsengo lsm fujita vivy/3958 --session SOME_LOGGED_PREMIUM_MEMBER
+https://onsen-ma3phlsvod.sslcs.cdngc.net/onsen-ma3pvod/_definst_/202104/...(SCREENED).../playlist.m3u8
+https://onsen-ma3phlsvod.sslcs.cdngc.net/onsen-ma3pvod/_definst_/202104/...(SCREENED).../playlist.m3u8
+https://onsen-ma3phlsvod.sslcs.cdngc.net/onsen-ma3pvod/_definst_/202104/...(SCREENED).../playlist.m3u8
+https://onsen-ma3phlsvod.sslcs.cdngc.net/onsen-ma3pvod/_definst_/202103/...(SCREENED).../playlist.m3u8
+https://onsen-ma3phlsvod.sslcs.cdngc.net/onsen-ma3pvod/_definst_/202103/...(SCREENED).../playlist.m3u8
+https://onsen-ma3phlsvod.sslcs.cdngc.net/onsen-ma3pvod/_definst_/202103/...(SCREENED).../playlist.m3u8
+https://onsen-ma3phlsvod.sslcs.cdngc.net/onsen-ma3pvod/_definst_/202103/...(SCREENED).../playlist.m3u8
+https://onsen-ma3phlsvod.sslcs.cdngc.net/onsen-ma3pvod/_definst_/202102/...(SCREENED).../playlist.m3u8
+https://onsen-ma3phlsvod.sslcs.cdngc.net/onsen-ma3pvod/_definst_/202102/...(SCREENED).../playlist.m3u8
+https://onsen-ma3phlsvod.sslcs.cdngc.net/onsen-ma3pvod/_definst_/202104/...(SCREENED).../playlist.m3u8
+```
+
+You can also filter radio episodes that were on-air on and after a given date:
+
+```
+~/w/onsengo ❯❯❯ go run . lsm --after 2021-04-16
+```
+
+The above command gives you all manifests **you are able to play** and they were updated after 2021-04-16 (including 2021-04-16).
+
+## `onsengo dump`
+
+This command dumps raw data on the website into a json string. It can be passed to `jq` to be manually inspecting.
+
+## Global options
+
+`--backend`: set a custom website url. If you have previously index.html archives, you can provide it like this:
+```
+onsengo ls --backend file:///full/path/to/index.html
+```
+`--session`: if you are a premium user, you could provide a **session** to the command:
+```
+onsengo ls --session SESSION_STRING_KEEP_IT_SECURE
+```
+A session string can be found in the cookie when you get logged-in and starts browsing onsen.ag.
+- Open a browser (Firefox as an example) to https://onsen.ag/, make sure you are logged in.
+- Open developer tool, reload the page
+- In the network tab, copy the first request to onsen.ag with "copy as cURL"
+- From the copied string, match the pattern `_session_id=SESSION_STRING_KEEP_IT_SECURE` without the `_session_id=` prefix.
+
+## Some use cases
+
+### Listen radio with `vlc`
+
+```
+onsengo lsm vivy | vlc -
+```
+
+### With some helps by `xargs` & `ffmpeg`
+
+```
+onsengo lsm gurepa fujita | \
+	xargs -I @ sh -c 'out=$(basename ${1%/playlist.m3u8}); ffmpeg -i $1 -codec copy $out' sh @
+```
