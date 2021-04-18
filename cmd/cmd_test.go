@@ -3,11 +3,13 @@ package cmd
 import (
 	"compress/bzip2"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/adios/onsengo/onsen"
 	"github.com/stretchr/testify/assert"
@@ -22,6 +24,66 @@ func TestMain(m *testing.M) {
 	root.cmd.SetErr(root.err)
 
 	os.Exit(m.Run())
+}
+
+type mockEpisode struct {
+	manifest string
+	tm       time.Time
+}
+
+func (e mockEpisode) Id() int {
+	return 1227
+}
+
+func (e mockEpisode) Manifest() (string, bool) {
+	if e.manifest == "" {
+		return "", false
+	}
+	return e.manifest, true
+}
+
+func (e mockEpisode) JstUpdatedAt() (time.Time, bool) {
+	if e.tm == (time.Time{}) {
+		return time.Time{}, false
+	}
+	return e.tm, true
+}
+
+func TestFilter(t *testing.T) {
+	var (
+		assert = assert.New(t)
+		pt     = func(str string) time.Time {
+			out, _ := time.Parse("2006-01-02", str)
+			return out
+		}
+		empty    = mockEpisode{}
+		withMani = mockEpisode{manifest: "a"}
+		withTime = mockEpisode{tm: pt("1989-12-27")}
+		normal   = mockEpisode{manifest: "b", tm: pt("2021-06-04")}
+	)
+
+	{
+		f := NewFilter()
+		f.Push(empty)
+		f.Push(withMani)
+		f.Push(withTime)
+		f.Push(normal)
+		assert.Equal([]string{"a", "b"}, f.Out())
+	}
+	{
+		out := strings.Builder{}
+		log.SetOutput(&out)
+
+		f := NewFilter(FilterUpdatedAfter(pt("2021-06-04")))
+		f.Push(empty)
+		assert.Contains(out.String(), "doesn't have update time")
+		out.Reset()
+		f.Push(withMani)
+		assert.Contains(out.String(), "doesn't have update time")
+		f.Push(withTime)
+		f.Push(normal)
+		assert.Equal([]string{"b"}, f.Out())
+	}
 }
 
 func TestUnique(t *testing.T) {
@@ -109,6 +171,12 @@ func Test(t *testing.T) {
 		assert.Equal("HAS_BEEN_SCREENED\n", out.String())
 		assert.Equal("fujita/3560: empty manifest, may be inaccessible\nfujita/9999: not found\n", err.String())
 	}, "lsm", "fujita/3598", "fujita/3560", "fujita/9999", "--backend", server.URL)
+
+	execute(func(out b, err b) {
+		assert.NoError(Execute())
+		assert.Equal("HAS_BEEN_SCREENED\n", out.String())
+		assert.Equal("fujita/3560: empty manifest, may be inaccessible\n", err.String())
+	}, "lsm", "toshitai", "fujita/3598", "fujita/3560", "--after", "2021-03-16", "--backend", server.URL)
 
 	execute(func(out b, err b) {
 		var (
