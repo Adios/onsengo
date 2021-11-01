@@ -39,49 +39,40 @@ func TestCreateWithAnonymousUser(t *testing.T) {
 	assert.NoError(err)
 	assert.Nil(n.State.Signin, "Anonymous user doesn't have signin value")
 
-	kami := n.State.Programs.Programs.All[34]
+	chosen := n.State.Programs.Programs.All[7]
 
 	equals := []struct {
 		in       interface{}
 		expected interface{}
 	}{
-		{len(n.State.Programs.Programs.All), 128},
-		{kami.Id, 139},
-		{kami.DirectoryName, "kamisama-day"},
-		{kami.Title, "神様になったラジオ"},
-		{kami.New, false},
-		{*kami.Updated, "3/19"},
-		{len(kami.Contents), 8},
+		{len(n.State.Programs.Programs.All), 141},
+		{chosen.Id, 202},
+		{chosen.DirectoryName, "radionyan"},
+		{chosen.Title, "月とライカと吸血姫 ～アーニャ・シモニャン・ラジオニャン！～"},
+		{chosen.New, false},
+		{*chosen.Updated, "10/22"},
+		{len(chosen.Contents), 6},
 		{
-			kami.Performers,
+			chosen.Performers,
 			[]Performer{
-				{55, "佐倉綾音"},
-				{140, "花江夏樹"},
+				{1189, "木野日菜"},
 			},
 		},
 		{
-			kami.Contents[1],
+			chosen.Contents[1],
 			Content{
-				3677, "第12回 おまけ",
+				6506, "第3回 おまけ",
 				true, false, true, "sound", true,
-				139, "3/19", false,
+				202, "10/22", false,
 				"https://d3bzklg4lms4gh.cloudfront.net/program_info/image/default/production" +
-					"/66/99/05f3c9402ca36cc3156dd50b7ab9aad298dd/image?v=1602579721",
-				nil, []string{},
+					"/5b/6e/2a28979284885466f12fcc07f0a311736e29/image?v=1633683939",
+				nil, []Performer{},
 			},
 		},
 	}
 
 	for _, eq := range equals {
 		assert.Equal(eq.expected, eq.in)
-	}
-
-	{
-		// There are programs with nil updated value:
-		// 100man
-		assert.Nil(n.State.Programs.Programs.All[0].Updated)
-		// sorasara
-		assert.Nil(n.State.Programs.Programs.All[3].Updated)
 	}
 }
 
@@ -96,21 +87,21 @@ func TestCreateWithLogined(t *testing.T) {
 	assert.NoError(err)
 	assert.NotNil(n.State.Signin, "Logined user have signin value")
 
-	kami := n.State.Programs.Programs.All[30]
+	chosen := n.State.Programs.Programs.All[7]
 
 	equals := []struct {
 		in       interface{}
 		expected interface{}
 	}{
-		{len(n.State.Programs.Programs.All), 128},
-		{kami.Id, 139},
-		{kami.DirectoryName, "kamisama-day"},
-		{kami.Title, "神様になったラジオ"},
-		{kami.New, false},
-		{*kami.Updated, "3/19"},
-		{len(kami.Contents), 8},
+		{len(n.State.Programs.Programs.All), 141},
+		{chosen.Id, 202},
+		{chosen.DirectoryName, "radionyan"},
+		{chosen.Title, "月とライカと吸血姫 ～アーニャ・シモニャン・ラジオニャン！～"},
+		{chosen.New, false},
+		{*chosen.Updated, "10/22"},
+		{len(chosen.Contents), 6},
 		// Preimum user can access this content
-		{*kami.Contents[1].StreamingUrl, "HAS_BEEN_SCREENED"},
+		{*chosen.Contents[1].StreamingUrl, "HAS_BEEN_SCREENED"},
 	}
 
 	for _, eq := range equals {
@@ -130,6 +121,6 @@ func Example() {
 		panic(err)
 	}
 
-	fmt.Println(n.State.Programs.Programs.All[34].Title)
-	// Output: 神様になったラジオ
+	fmt.Println(n.State.Programs.Programs.All[7].Title)
+	// Output: 月とライカと吸血姫 ～アーニャ・シモニャン・ラジオニャン！～
 }

@@ -277,10 +277,11 @@ func (e Episode) JstUpdatedAt() (res time.Time, ok bool) {
 }
 
 // Returns a new copy of non-nil slice.
-func (e Episode) Guests() (names []string) {
-	out := make([]string, len(e.Raw.Guests))
-	// safe to copy, e.raw.Guests will never be a nil slice.
-	copy(out, e.Raw.Guests)
+func (e Episode) Guests() []Person {
+	out := make([]Person, len(e.Raw.Guests))
+	for i := range e.Raw.Guests {
+		out[i] = Person{&e.Raw.Guests[i]}
+	}
 	return out
 }
 
@@ -313,8 +314,8 @@ func (u User) Email() string {
 	return u.Raw.Email
 }
 
-func (u User) Id() string {
-	return u.Raw.Id
+func (u User) Uid() string {
+	return u.Raw.Uid
 }
 
 // Returns a new copy of non-nil slice.
