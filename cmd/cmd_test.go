@@ -17,7 +17,7 @@ import (
 
 func TestMain(m *testing.M) {
 	// Set a fixed date instead of time.Now() in JstUpdatedAt()
-	onsen.SetRefDate("2021-04-14")
+	onsen.SetRefDate("2021-11-01")
 	// Shortcut both onsen & cobra's output/stderr
 	root.out, root.err = new(strings.Builder), new(strings.Builder)
 	root.cmd.SetOut(root.out)
@@ -157,7 +157,7 @@ func Test(t *testing.T) {
 
 	execute(func(out b, err b) {
 		assert.NoError(Execute())
-		assert.Equal(strings.Repeat("HAS_BEEN_SCREENED\n", 121), out.String())
+		assert.Equal(strings.Repeat("HAS_BEEN_SCREENED\n", 144), out.String())
 	}, "lsm", "--backend", server.URL)
 
 	execute(func(out b, err b) {
@@ -169,14 +169,14 @@ func Test(t *testing.T) {
 	execute(func(out b, err b) {
 		assert.NoError(Execute())
 		assert.Equal("HAS_BEEN_SCREENED\n", out.String())
-		assert.Equal("fujita/3560: empty manifest, may be inaccessible\nfujita/9999: not found\n", err.String())
-	}, "lsm", "fujita/3598", "fujita/3560", "fujita/9999", "--backend", server.URL)
+		assert.Equal("fujita/6508: empty manifest, may be inaccessible\nfujita/9999: not found\n", err.String())
+	}, "lsm", "fujita/6507", "fujita/6508", "fujita/9999", "--backend", server.URL)
 
 	execute(func(out b, err b) {
 		assert.NoError(Execute())
 		assert.Equal("HAS_BEEN_SCREENED\n", out.String())
-		assert.Equal("fujita/3560: empty manifest, may be inaccessible\n", err.String())
-	}, "lsm", "toshitai", "fujita/3598", "fujita/3560", "--after", "2021-03-16", "--backend", server.URL)
+		assert.Equal("oshitai/6528: empty manifest, may be inaccessible\n", err.String())
+	}, "lsm", "radionyan", "oshitai/6527", "oshitai/6528", "--after", "2021-10-25", "--backend", server.URL)
 
 	execute(func(out b, err b) {
 		var (

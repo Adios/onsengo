@@ -28,7 +28,7 @@ type State struct {
 // Represents the root.state.sign_in of a Nuxt JSON object. Decodes only the fields we want.
 type Signin struct {
 	Email                string `json:"email"`
-	Id                   string `json:"id"`
+	Uid                  string `json:"uid"`
 	FavoritePerformerIds []int  `json:"favorite_performer_ids"`
 	FavoriteProgramIds   []int  `json:"favorite_program_ids"`
 	PlaylistedContentIds []int  `json:"playlisted_content_ids"`
@@ -55,19 +55,19 @@ type Performer struct {
 // Represents the root.state.programs.programs.all[].Contents[] of a Nuxt JSON object. Decodes only the fields we want.
 // If the current user identity (or anonymous) has no permissions to play the content, StreamingUrl will be nil.
 type Content struct {
-	Id             int      `json:"id"`
-	Title          string   `json:"title"`
-	Bonus          bool     `json:"bonus"`
-	Sticky         bool     `json:"sticky"`
-	Latest         bool     `json:"latest"`
-	MediaType      string   `json:"media_type"`
-	Premium        bool     `json:"premium"`
-	ProgramId      int      `json:"program_id"`
-	DeliveryDate   string   `json:"delivery_date"`
-	Movie          bool     `json:"movie"`
-	PosterImageUrl string   `json:"poster_image_url"`
-	StreamingUrl   *string  `json:"streaming_url"`
-	Guests         []string `json:"guests"`
+	Id             int         `json:"id"`
+	Title          string      `json:"title"`
+	Bonus          bool        `json:"bonus"`
+	Sticky         bool        `json:"sticky"`
+	Latest         bool        `json:"latest"`
+	MediaType      string      `json:"media_type"`
+	Premium        bool        `json:"premium"`
+	ProgramId      int         `json:"program_id"`
+	DeliveryDate   string      `json:"delivery_date"`
+	Movie          bool        `json:"movie"`
+	PosterImageUrl string      `json:"poster_image_url"`
+	StreamingUrl   *string     `json:"streaming_url"`
+	Guests         []Performer `json:"guests"`
 }
 
 func CreateFromReader(r io.Reader) (*Nuxt, error) {

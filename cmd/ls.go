@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -116,7 +115,11 @@ func addRadioEpisodes(out *pp.Node, r onsen.Radio) {
 		// Append guests to radio episode title
 		last := e.Title()
 		if len(e.Guests()) != 0 {
-			last += " # " + strings.Join(e.Guests(), " ")
+			last += " #"
+
+			for _, p := range e.Guests() {
+				last += " " + p.Name()
+			}
 		}
 
 		dir.Push(

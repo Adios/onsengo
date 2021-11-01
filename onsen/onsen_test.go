@@ -11,7 +11,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	SetRefDate("2021-03-21")
+	SetRefDate("2021-10-29")
 	os.Exit(m.Run())
 }
 
@@ -117,48 +117,48 @@ func TestNuxtWithAnonymousUser(t *testing.T) {
 		assert.False(ok)
 	}
 
-	// kamisama-day
-	k := n.Radios()[34]
+	// radionyan
+	k := n.Radios()[7]
 
 	eqs := []struct {
 		in  interface{}
 		out interface{}
 	}{
 		// radio
-		{len(n.Radios()), 128},
-		{k.Id(), 139},
-		{k.Name(), "kamisama-day"},
-		{k.Title(), "神様になったラジオ"},
+		{len(n.Radios()), 141},
+		{k.Id(), 202},
+		{k.Name(), "radionyan"},
+		{k.Title(), "月とライカと吸血姫 ～アーニャ・シモニャン・ラジオニャン！～"},
 		{k.HasBeenUpdated(), false},
-		{len(k.Hosts()), 2},
-		{k.Hosts()[0].Id(), 55},
-		{k.Hosts()[1].Name(), "花江夏樹"},
-		{len(k.Episodes()), 8},
-		{k.Episodes()[0].Title(), "第12回"},
-		{k.Episodes()[1].Title(), "第12回 おまけ"},
-		// episode 7
-		{k.Episodes()[6].Id(), 3114},
-		{k.Episodes()[6].RadioId(), 139},
-		{k.Episodes()[6].Title(), "第9回"},
-		{k.Episodes()[6].Title(), "第9回"},
+		{len(k.Hosts()), 1},
+		{k.Hosts()[0].Id(), 1189},
+		{k.Hosts()[0].Name(), "木野日菜"},
+		{len(k.Episodes()), 6},
+		{k.Episodes()[0].Title(), "第3回"},
+		{k.Episodes()[1].Title(), "第3回 おまけ"},
+		// episode 5
+		{k.Episodes()[4].Id(), 6006},
+		{k.Episodes()[4].RadioId(), 202},
+		{k.Episodes()[4].Title(), "第1回"},
 		{
-			k.Episodes()[6].Poster(),
+			k.Episodes()[4].Poster(),
 			"https://d3bzklg4lms4gh.cloudfront.net/program_info/image/default/production" +
-				"/66/99/05f3c9402ca36cc3156dd50b7ab9aad298dd/image?v=1602579721",
+				"/5b/6e/2a28979284885466f12fcc07f0a311736e29/image?v=1633683939",
 		},
-		{k.Episodes()[6].Guests(), []string{"重松千晴"}},
-		{k.Episodes()[6].IsBonus(), false},
-		{k.Episodes()[6].IsSticky(), false},
-		{k.Episodes()[6].IsLatest(), false},
-		{k.Episodes()[6].RequiresPremium(), true},
-		{k.Episodes()[6].HasVideoStream(), false},
+		{k.Episodes()[4].Guests()[0].Id(), 574},
+		{k.Episodes()[4].Guests()[0].Name(), "内山昂輝"},
+		{k.Episodes()[4].IsBonus(), false},
+		{k.Episodes()[4].IsSticky(), false},
+		{k.Episodes()[4].IsLatest(), false},
+		{k.Episodes()[4].RequiresPremium(), true},
+		{k.Episodes()[4].HasVideoStream(), false},
 	}
 	for _, eq := range eqs {
 		assert.Equal(eq.out, eq.in)
 	}
 
 	{
-		m, ok := k.Episodes()[6].Manifest()
+		m, ok := k.Episodes()[4].Manifest()
 		assert.False(ok)
 		assert.Equal("", m, "Anonymous user is unable to access paid contents")
 	}
@@ -166,36 +166,17 @@ func TestNuxtWithAnonymousUser(t *testing.T) {
 		// Radio time
 		at, ok := k.JstUpdatedAt()
 		assert.True(ok)
-		assert.Equal("2021-03-19 00:00:00 +0900 UTC+9", at.String())
+		assert.Equal("2021-10-22 00:00:00 +0900 UTC+9", at.String())
 	}
 	{
 		// Episode time
-		at, ok := k.Episodes()[6].JstUpdatedAt()
+		at, ok := k.Episodes()[4].JstUpdatedAt()
 		assert.True(ok)
-		assert.Equal("2021-02-05 00:00:00 +0900 UTC+9", at.String())
-	}
-	{
-		// 100man: no radio time, but contains episodes, use episode's time
-		r := n.Radios()[0]
-		assert.Nil(r.Raw.Updated)
-
-		a, ok := r.JstUpdatedAt()
-		assert.True(ok)
-		b, _ := r.Episodes()[0].JstUpdatedAt()
-		assert.Equal(b, a)
-	}
-	{
-		// sorasara: no radio time, no episodes
-		r := n.Radios()[3]
-		assert.Nil(r.Raw.Updated)
-
-		a, ok := r.JstUpdatedAt()
-		assert.False(ok)
-		assert.Equal(time.Time{}, a)
+		assert.Equal("2021-09-17 00:00:00 +0900 UTC+9", at.String())
 	}
 	{
 		// fujita: has videos
-		f := n.Radios()[17]
+		f := n.Radios()[9]
 		assert.True(f.Episodes()[0].HasVideoStream())
 	}
 }
@@ -216,22 +197,27 @@ func TestNuxtWithPremiumUser(t *testing.T) {
 	}{
 		{ok, true},
 		{u.Email(), "hello@world"},
-		{u.Id(), "0"},
+		{u.Uid(), "0"},
 		{
 			u.FollowingPeople(),
 			[]int{
-				1377, 1044, 946, 889, 726, 645, 641, 590, 559, 429, 421, 284, 211, 136,
-				114, 113, 105, 77, 66, 55, 396, 29,
+				1544, 1044, 946, 889, 726, 645, 641, 590, 559, 429, 421, 284, 211, 136,
+				114, 113, 105, 77, 66, 55, 396, 30, 1699, 493, 29,
 			},
 		},
 		{
 			u.FollowingRadios(),
 			[]int{
-				4, 10, 16, 17, 18, 29, 47, 54, 56, 65, 76, 77, 88, 89, 93, 118, 131, 136,
-				139, 149, 156, 159,
+				4, 10, 16, 17, 18, 29, 46, 47, 54, 65, 76, 77, 88, 89, 93, 96, 118, 134,
+				179, 185, 193, 201, 202, 203, 216, 221,
 			},
 		},
-		{u.PlaylistEpisodes(), []int{3676, 3677}},
+		{
+			u.PlaylistEpisodes(),
+			[]int{
+				6525, 6527, 6528, 6582, 6600, 6601, 6594, 6609, 6610,
+			},
+		},
 	}
 	for _, eq := range eqs {
 		assert.Equal(eq.out, eq.in)
@@ -239,9 +225,9 @@ func TestNuxtWithPremiumUser(t *testing.T) {
 
 	{
 		// tsudaken: premium user can watch premium content
-		assert.Equal("tsudaken", n.Radios()[17].Name())
+		assert.Equal("fujita", n.Radios()[9].Name())
 
-		m, ok := n.Radios()[17].Episodes()[0].Manifest()
+		m, ok := n.Radios()[9].Episodes()[1].Manifest()
 		assert.True(ok)
 		assert.Equal("HAS_BEEN_SCREENED", m)
 	}
@@ -276,19 +262,19 @@ func TestOnsenRadio(t *testing.T) {
 	{
 		o, _ := Create(string(f))
 		assert.Nil(o.cache.r)
-		r, ok := o.Radio(139)
+		r, ok := o.Radio(202)
 		assert.True(ok)
-		assert.Equal(o.Radios()[59], r)
+		assert.Equal(o.Radios()[7], r)
 		assert.NotNil(o.cache.r)
 	}
 	{
 		o, _ := Create(string(f))
 		assert.Nil(o.cache.r)
-		a, ok := o.Radio("kamisama-day")
+		a, ok := o.Radio("radionyan")
 		assert.True(ok)
-		assert.Equal(o.Radios()[59], a)
+		assert.Equal(o.Radios()[7], a)
 		assert.NotNil(o.cache.r)
-		b, _ := o.Radio("kamisama-day")
+		b, _ := o.Radio("radionyan")
 		assert.Equal(b, a)
 	}
 }
@@ -310,9 +296,9 @@ func TestOnsenEpisode(t *testing.T) {
 	{
 		o, _ := Create(string(f))
 		assert.Nil(o.cache.e)
-		e, ok := o.Episode(3510)
+		e, ok := o.Episode(6505)
 		assert.True(ok)
-		assert.Equal(o.Radios()[59].Episodes()[0], e)
+		assert.Equal(o.Radios()[7].Episodes()[0], e)
 		assert.NotNil(o.cache.e)
 	}
 }
