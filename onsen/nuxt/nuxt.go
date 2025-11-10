@@ -65,7 +65,7 @@ type Content struct {
 	ProgramId      int         `json:"program_id"`
 	DeliveryDate   string      `json:"delivery_date"`
 	Movie          bool        `json:"movie"`
-	PosterImageUrl string      `json:"poster_image_url"`
+	PosterImageUrl interface{} `json:"poster_image_url"`
 	StreamingUrl   *string     `json:"streaming_url"`
 	Guests         []Performer `json:"guests"`
 }

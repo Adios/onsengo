@@ -249,7 +249,14 @@ func (e Episode) Title() string {
 
 // The URL to episode's poster image.
 func (e Episode) Poster() (url string) {
-	return e.Raw.PosterImageUrl
+	switch v := e.Raw.PosterImageUrl.(type) {
+	case string:
+		return v
+	case float64:
+		return fmt.Sprintf("%d", int(v))
+	default:
+		return ""
+	}
 }
 
 // The URL to episode's m3u8 manifest. An empty string means the resource is not accessible with current session.
