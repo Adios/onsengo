@@ -63,7 +63,7 @@ type Content struct {
 	MediaType      string      `json:"media_type"`
 	Premium        bool        `json:"premium"`
 	ProgramId      int         `json:"program_id"`
-	DeliveryDate   string      `json:"delivery_date"`
+	DeliveryDate   interface{} `json:"delivery_date"`
 	Movie          bool        `json:"movie"`
 	PosterImageUrl interface{} `json:"poster_image_url"`
 	StreamingUrl   *string     `json:"streaming_url"`
