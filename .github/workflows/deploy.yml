@@ -10,12 +10,12 @@ jobs:
   deploy-github:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     - name: Set up Go
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v5
       with:
-        go-version: 1.16
+        go-version: '1.22'
 
     - name: Test
       run: go test -v ./...
@@ -27,10 +27,8 @@ jobs:
       run: make -j4 bindist
 
     - name: Deploy
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         files: |
           build/*.zst
           build/*.zip
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
