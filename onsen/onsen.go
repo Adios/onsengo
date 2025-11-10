@@ -251,8 +251,13 @@ func (r Radio) Episodes() []Episode {
 			continue
 		}
 
+		var deliveryDateStr string
+		if s, isString := episode.DeliveryDate.(string); isString {
+			deliveryDateStr = s
+		}
+
 		reDay := regexp.MustCompile(`^\d{1,2}\/(\d{1,2})$`)
-		mDay := reDay.FindStringSubmatch(episode.DeliveryDate)
+		mDay := reDay.FindStringSubmatch(deliveryDateStr)
 		if len(mDay) < 2 {
 			continue
 		}
@@ -272,8 +277,15 @@ func (r Radio) Episodes() []Episode {
 	for i := range r.Raw.Contents {
 		e := Episode{Raw: &r.Raw.Contents[i]}
 
-		// Guess the current date using the reference time, which is updated after each successful guess.
-		currentDate, ok := GuessTime(e.Raw.DeliveryDate, ref)
+		var currentDate time.Time
+		var ok bool
+
+		if deliveryDateStr, isString := e.Raw.DeliveryDate.(string); isString {
+			currentDate, ok = GuessTime(deliveryDateStr, ref)
+		} else if _, isNum := e.Raw.DeliveryDate.(float64); isNum {
+			currentDate, ok = e.dateFromURL(loc)
+		}
+
 		if ok {
 			e.GuessedDate = currentDate
 			// The new reference for the next (older) episode is the date we just determined.
@@ -288,6 +300,36 @@ func (r Radio) Episodes() []Episode {
 type Episode struct {
 	Raw         *nuxt.Content
 	GuessedDate time.Time
+}
+
+var reDateFromURL = regexp.MustCompile(`[a-z]+(\d{2})(\d{2})(\d{2})`)
+
+// dateFromURL tries to parse a date from the streaming URL.
+func (e Episode) dateFromURL(loc *time.Location) (time.Time, bool) {
+	url, ok := e.Manifest()
+	if !ok {
+		return time.Time{}, false
+	}
+
+	m := reDateFromURL.FindStringSubmatch(url)
+	if m == nil {
+		return time.Time{}, false
+	}
+
+	year, err := strconv.Atoi("20" + m[1])
+	if err != nil {
+		return time.Time{}, false
+	}
+	month, err := strconv.Atoi(m[2])
+	if err != nil || month < 1 || month > 12 {
+		return time.Time{}, false
+	}
+	day, err := strconv.Atoi(m[3])
+	if err != nil || day < 1 || day > 31 {
+		return time.Time{}, false
+	}
+
+	return time.Date(year, time.Month(month), day, 0, 0, 0, 0, loc), true
 }
 
 func (e Episode) Id() int {
