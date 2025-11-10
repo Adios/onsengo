@@ -200,16 +200,19 @@ func (r Radio) HasBeenUpdated() bool {
 //
 // BUG(adios): It's possible we returns a time with wrong YYYY value.
 func (r Radio) JstUpdatedAt() (res time.Time, ok bool) {
-	t := r.Raw.Updated
-
-	// Try using first (latest) episode's MM/DD if current show has no MM/DD
-	if t == nil {
-		if cs := r.Raw.Contents; len(cs) == 0 || cs[0].DeliveryDate == "" {
-			return time.Time{}, false
-		}
-		t = &r.Raw.Contents[0].DeliveryDate
+	// The Episodes() method now returns episodes with pre-calculated correct dates.
+	// We use the date of the first (latest) episode as the representative date for the radio program.
+	episodes := r.Episodes()
+	if len(episodes) > 0 {
+		return episodes[0].JstUpdatedAt()
 	}
-	return GuessJstTimeWithNow(*t)
+
+	// Fallback for radios with no episodes, using the old logic.
+	if r.Raw.Updated != nil {
+		return GuessJstTimeWithNow(*r.Raw.Updated)
+	}
+
+	return time.Time{}, false
 }
 
 // Returns a new copy of non-nil slice.
@@ -224,15 +227,67 @@ func (r Radio) Hosts() []Person {
 // Returns a new copy of non-nil slice.
 func (r Radio) Episodes() []Episode {
 	out := make([]Episode, len(r.Raw.Contents))
+
+	// Start with the global reference time.
+	ref := guessRefTime
+	loc := time.FixedZone("UTC+9", 9*60*60)
+
+	// Try to find a more accurate reference time (an "anchor") from the newest episodes' streaming_url.
+	for i := 0; i < 2 && i < len(r.Raw.Contents); i++ {
+		episode := r.Raw.Contents[i]
+		if episode.StreamingUrl == nil {
+			continue
+		}
+
+		re := regexp.MustCompile(`\/(\d{4})(\d{2})\/`)
+		m := re.FindStringSubmatch(*episode.StreamingUrl)
+		if len(m) < 3 {
+			continue
+		}
+
+		year, errYear := strconv.Atoi(m[1])
+		month, errMonth := strconv.Atoi(m[2])
+		if errYear != nil || errMonth != nil {
+			continue
+		}
+
+		reDay := regexp.MustCompile(`^\d{1,2}\/(\d{1,2})$`)
+		mDay := reDay.FindStringSubmatch(episode.DeliveryDate)
+		if len(mDay) < 2 {
+			continue
+		}
+		day, errDay := strconv.Atoi(mDay[1])
+		if errDay != nil {
+			continue
+		}
+
+		// Successfully got a date from URL, use it as the new reference.
+		ref = time.Date(year, time.Month(month), day, 0, 0, 0, 0, loc)
+		break // Stop after finding the first valid anchor.
+	}
+
+	// Ensure our reference time is in the correct location before starting.
+	ref = ref.In(loc)
+
 	for i := range r.Raw.Contents {
-		out[i] = Episode{&r.Raw.Contents[i]}
+		e := Episode{Raw: &r.Raw.Contents[i]}
+
+		// Guess the current date using the reference time, which is updated after each successful guess.
+		currentDate, ok := GuessTime(e.Raw.DeliveryDate, ref)
+		if ok {
+			e.GuessedDate = currentDate
+			// The new reference for the next (older) episode is the date we just determined.
+			ref = currentDate
+		}
+		out[i] = e
 	}
 	return out
 }
 
 // Transforms nuxt.Content.
 type Episode struct {
-	Raw *nuxt.Content
+	Raw         *nuxt.Content
+	GuessedDate time.Time
 }
 
 func (e Episode) Id() int {
@@ -249,7 +304,14 @@ func (e Episode) Title() string {
 
 // The URL to episode's poster image.
 func (e Episode) Poster() (url string) {
-	return e.Raw.PosterImageUrl
+	switch v := e.Raw.PosterImageUrl.(type) {
+	case string:
+		return v
+	case float64:
+		return fmt.Sprintf("%d", int(v))
+	default:
+		return ""
+	}
 }
 
 // The URL to episode's m3u8 manifest. An empty string means the resource is not accessible with current session.
@@ -273,7 +335,10 @@ func (e Episode) Manifest() (url string, ok bool) {
 //
 // BUG(adios): It's possible we returns a time with wrong YYYY value.
 func (e Episode) JstUpdatedAt() (res time.Time, ok bool) {
-	return GuessJstTimeWithNow(e.Raw.DeliveryDate)
+	if !e.GuessedDate.IsZero() {
+		return e.GuessedDate, true
+	}
+	return time.Time{}, false
 }
 
 // Returns a new copy of non-nil slice.

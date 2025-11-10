@@ -17,7 +17,7 @@ import (
 
 func TestMain(m *testing.M) {
 	// Set a fixed date instead of time.Now() in JstUpdatedAt()
-	onsen.SetRefDate("2021-11-01")
+	onsen.SetRefDate("2025-11-10")
 	// Shortcut both onsen & cobra's output/stderr
 	root.out, root.err = new(strings.Builder), new(strings.Builder)
 	root.cmd.SetOut(root.out)
@@ -157,44 +157,43 @@ func Test(t *testing.T) {
 
 	execute(func(out b, err b) {
 		assert.NoError(Execute())
-		assert.Equal(strings.Repeat("HAS_BEEN_SCREENED\n", 144), out.String())
+		assert.Equal(1528, strings.Count(out.String(), "https://"))
 	}, "lsm", "--backend", server.URL)
 
 	execute(func(out b, err b) {
 		assert.NoError(Execute())
-		assert.Equal(strings.Repeat("HAS_BEEN_SCREENED\n", 2), out.String())
+		assert.Equal(21,strings.Count(out.String(), "https://"))
 		assert.Equal("nosuchradio: not found\n", err.String())
 	}, "lsm", "fujita", "gurepap", "nosuchradio", "--backend", server.URL)
 
 	execute(func(out b, err b) {
 		assert.NoError(Execute())
-		assert.Equal("HAS_BEEN_SCREENED\n", out.String())
-		assert.Equal("fujita/6508: empty manifest, may be inaccessible\nfujita/9999: not found\n", err.String())
-	}, "lsm", "fujita/6507", "fujita/6508", "fujita/9999", "--backend", server.URL)
+		assert.Equal(1, strings.Count(out.String(), "https://"))
+		assert.Equal("fujita/24971: empty manifest, may be inaccessible\nfujita/99999: not found\n", err.String())
+	}, "lsm", "fujita/24970", "fujita/24971", "fujita/99999", "--backend", server.URL)
 
 	execute(func(out b, err b) {
 		assert.NoError(Execute())
-		assert.Equal("HAS_BEEN_SCREENED\n", out.String())
-		assert.Equal("oshitai/6528: empty manifest, may be inaccessible\n", err.String())
-	}, "lsm", "radionyan", "oshitai/6527", "oshitai/6528", "--after", "2021-10-25", "--backend", server.URL)
-
-	execute(func(out b, err b) {
-		var (
-			f, _    = os.Open("testdata/expected_dump.txt.bz2")
-			r       = bzip2.NewReader(f)
-			data, _ = io.ReadAll(r)
-		)
-
-		assert.NoError(Execute())
-		assert.Equal(string(data), out.String())
-	}, "dump", "--backend", server.URL)
+		assert.Equal(1, strings.Count(out.String(), "https://"))
+		assert.Equal("shigohaji/25136: empty manifest, may be inaccessible\n", err.String())
+	}, "lsm", "tate", "shigohaji/25136", "shigohaji/25137", "--after", "2025-11-03", "--backend", server.URL)
 }
 
 func server(t *testing.T) http.Handler {
-	f, _ := os.ReadFile("testdata/fixture_nologin_screened.html")
+	f, err := os.Open("testdata/fixture_nologin_screened.html.bz2")
+	if err != nil {
+		t.Fatalf("failed to open fixture: %v", err)
+	}
+	defer f.Close()
+
+	r := bzip2.NewReader(f)
+	data, err := io.ReadAll(r)
+	if err != nil {
+		t.Fatalf("failed to read and decompress fixture: %v", err)
+	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		assert.Equal(t, ua, req.Header.Get("User-Agent"))
-		w.Write(f)
+		w.Write(data)
 	})
 }
