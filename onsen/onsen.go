@@ -209,7 +209,9 @@ func (r Radio) JstUpdatedAt() (res time.Time, ok bool) {
 
 	// Fallback for radios with no episodes, using the old logic.
 	if r.Raw.Updated != nil {
-		return GuessJstTimeWithNow(*r.Raw.Updated)
+		if s, ok := r.Raw.Updated.(string); ok {
+			return GuessJstTimeWithNow(s)
+		}
 	}
 
 	return time.Time{}, false

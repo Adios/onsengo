@@ -41,7 +41,7 @@ type Program struct {
 	DirectoryName string      `json:"directory_name"`
 	Title         string      `json:"title"`
 	New           bool        `json:"new"`
-	Updated       *string     `json:"updated"`
+	Updated       interface{} `json:"updated"`
 	Performers    []Performer `json:"performers"`
 	Contents      []Content   `json:"contents"`
 }
