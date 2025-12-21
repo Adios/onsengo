@@ -50,7 +50,7 @@ func TestCreateWithAnonymousUser(t *testing.T) {
 		{chosen.DirectoryName, "radionyan"},
 		{chosen.Title, "月とライカと吸血姫 ～アーニャ・シモニャン・ラジオニャン！～"},
 		{chosen.New, false},
-		{*chosen.Updated, "10/22"},
+		{chosen.Updated, "10/22"},
 		{len(chosen.Contents), 6},
 		{
 			chosen.Performers,
@@ -98,7 +98,7 @@ func TestCreateWithLogined(t *testing.T) {
 		{chosen.DirectoryName, "radionyan"},
 		{chosen.Title, "月とライカと吸血姫 ～アーニャ・シモニャン・ラジオニャン！～"},
 		{chosen.New, false},
-		{*chosen.Updated, "10/22"},
+		{chosen.Updated, "10/22"},
 		{len(chosen.Contents), 6},
 		// Preimum user can access this content
 		{*chosen.Contents[1].StreamingUrl, "HAS_BEEN_SCREENED"},
